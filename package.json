@@ -33,6 +33,7 @@
         "multer": "^1.4.2",
         "multer-storage-cloudinary": "^4.0.0",
         "slugify": "^1.4.6",
+        "socket.io": "^4.4.1",
         "validator": "^13.5.2",
         "xss-clean": "^0.1.1"
     },
