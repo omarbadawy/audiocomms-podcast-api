@@ -10,10 +10,8 @@ const compression = require('compression')
 
 const AppError = require('./utils/appError')
 const globalErrorHandler = require('./controllers/errorController')
-// const userRouter = require('./routes/userRoutes')
+const userRouter = require('./routes/userRoutes')
 // const categoryRouter = require('./routes/categoryRoutes')
-// const recipeRouter = require('./routes/recipeRoutes')
-// const orderRouter = require('./routes/orderRoutes')
 
 const app = express()
 
@@ -62,7 +60,7 @@ app.use(hpp())
 app.use(compression())
 
 // Mounting routers
-// app.use('/api/v1/users', userRouter)
+app.use('/api/v1/users', userRouter)
 
 // app.use('/api/v1/categories', categoryRouter)
 
@@ -79,7 +77,8 @@ app.all('*', (req, res, next) => {
         The other middlewares in the middleware stack and send the error that we passed in to
         the global error handling middleware
      */
-    next(new AppError(`Can't find ${req.originalUrl} on the server`, 400))
+    //next(new AppError(`Can't find ${req.originalUrl} on the server`, 400))
+    next(new AppError(`Can't find this route on the server`, 400))
 })
 
 app.use(globalErrorHandler)
