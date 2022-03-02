@@ -1,5 +1,5 @@
-const catchAsync = require('./../utils/catchAsync')
-const AppError = require('./../utils/appError')
+const catchAsync = require('../utils/catchAsync')
+const AppError = require('../utils/appError')
 const APIFeatures = require('../utils/apiFeatures')
 
 exports.deleteOne = (Model) =>
@@ -46,12 +46,16 @@ exports.createOne = (Model) =>
         })
     })
 
-exports.getOne = (Model, populateOptions) =>
+exports.getOne = (Model, isAdmin = false) =>
     catchAsync(async (req, res, next) => {
-        let query = Model.findById(req.params.id)
+        let query
 
-        if (populateOptions) {
-            query = query.populate(populateOptions)
+        if (isAdmin) {
+            query = Model.findById(req.params.id).select('+email')
+        } else {
+            query = Model.findById(req.params.id).select(
+                '-role -passwordResetToken -passwordResetExpires'
+            )
         }
 
         const doc = await query
@@ -68,7 +72,7 @@ exports.getOne = (Model, populateOptions) =>
         })
     })
 
-exports.getAll = (Model) =>
+exports.getAll = (Model, isAdmin = false) =>
     catchAsync(async (req, res, next) => {
         const featuresBeforePagination = new APIFeatures(
             Model.find(),
@@ -82,7 +86,14 @@ exports.getAll = (Model) =>
             .paginate()
 
         // const docs = await features.query.explain()
-        const docs = await features.query
+        let docs
+        if (isAdmin) {
+            docs = await features.query.select('+email')
+        } else {
+            docs = await features.query.select(
+                '-role -passwordResetToken -passwordResetExpires'
+            )
+        }
         const docsCount = await Model.countDocuments(
             featuresBeforePagination.query
         )
