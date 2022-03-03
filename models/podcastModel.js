@@ -7,7 +7,7 @@ const podcastSchema = new mongoose.Schema(
             trim: true,
             unique: true,
             required: [true, 'Please, provide the podcast name'],
-            minLength: [5, 'Please, name must be more than 8 characters'],
+            minLength: [5, 'Please, name must be more than 5 characters'],
             maxLength: [60, 'Please, name must be less than 60 characters'],
         },
         status: {

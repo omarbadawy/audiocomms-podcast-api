@@ -1,5 +1,4 @@
 const multer = require('multer')
-const sharp = require('sharp')
 const Datauri = require('datauri')
 const path = require('path')
 const DataURIParser = require('datauri/parser')
@@ -31,15 +30,6 @@ const dUri = new DataURIParser()
 const dataUri = (req) =>
     dUri.format(path.extname(req.file.originalname).toString(), req.file.buffer)
 
-const convertImg = async (file) => {
-    const name = Date.now() + file.originalname
-    const path = `./uploads/${name}.webp`
-    await sharp(file.buffer)
-        .webp({ quality: 20 })
-        .toFile(`./uploads/${name}.webp`)
-    return path
-}
-
 const uploadPodcast = multer({
     storage: multer.diskStorage({
         destination: './uploads',
@@ -59,4 +49,8 @@ const uploadPodcast = multer({
     limits: { fileSize: 100 * 1024 * 1024 },
 }).single('audio')
 
-module.exports = { multerUploads, uploadPodcast, dataUri, convertImg }
+module.exports = {
+    multerUploads,
+    uploadPodcast,
+    dataUri,
+}

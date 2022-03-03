@@ -2,9 +2,11 @@ const AppError = require('../utils/appError')
 const User = require('./../models/userModel')
 const catchAsync = require('./../utils/catchAsync')
 const factory = require('./handlerFactory')
-const { convertImg } = require('../utils/multer')
 const { uploader } = require('../utils/cloudinary')
-const removeFile = require('../utils/removeFile')
+const { StatusCodes } = require('http-status-codes')
+
+const { Readable } = require('stream')
+const sharp = require('sharp')
 
 const filterObj = (obj, ...allowedFeilds) => {
     const newObj = {}
@@ -34,16 +36,32 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         )
     }
 
-    // Convert photo to webp and return photo path
-    const photoPath = await convertImg(req.file)
-    // upload photo to cloudinary
-    const photo = await uploader.upload(photoPath, {
-        folder: 'userPhotos',
-    })
-    // add photo url to req.body
-    req.body.photo = photo.secure_url
-    // remove the image from server
-    removeFile(photoPath)
+    if (req.file) {
+        const bufferToStream = (buffer) => {
+            const readable = new Readable({
+                read() {
+                    this.push(buffer)
+                    this.push(null)
+                },
+            })
+            return readable
+        }
+
+        const data = await sharp(req.file.buffer)
+            .webp({ quality: 20 })
+            .toBuffer()
+        const stream = uploader.upload_stream(
+            { folder: 'userPhotos' },
+            (error, result) => {
+                if (error)
+                    return next(
+                        new AppError(error.message, StatusCodes.BAD_REQUEST)
+                    )
+                req.body.photo = result.secure_url
+            }
+        )
+        bufferToStream(data).pipe(stream)
+    }
 
     // filtered out unwanted feild names
 
