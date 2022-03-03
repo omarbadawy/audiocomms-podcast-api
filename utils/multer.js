@@ -31,9 +31,7 @@ const dataUri = (req) =>
     dUri.format(path.extname(req.file.originalname).toString(), req.file.buffer)
 
 const uploadPodcast = multer({
-    storage: multer.diskStorage({
-        destination: './uploads',
-    }),
+    storage,
     fileFilter: (req, file, cb) => {
         if (file.mimetype.startsWith('audio')) {
             cb(null, true)

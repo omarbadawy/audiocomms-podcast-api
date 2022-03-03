@@ -14,11 +14,10 @@ const {
 
 const { uploadPodcast } = require('../utils/multer')
 
-router.get('/search', searchPodcast)
-router.get('/', getAllPodcasts)
-
 router.use(protect)
 
+router.get('/search', searchPodcast)
+router.get('/', getAllPodcasts)
 router.get('/me', getMyPodcasts)
 router.get('/:id', getPodcast)
 router.post('/', uploadPodcast, createPodcast)

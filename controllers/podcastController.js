@@ -3,16 +3,14 @@ const catchAsync = require('../utils/catchAsync')
 const AppError = require('../utils/appError')
 const { StatusCodes } = require('http-status-codes')
 const { uploader } = require('../utils/cloudinary')
-const { getAudioDuration } = require('../utils/getAudioDuration')
-const removeFile = require('../utils/removeFile')
+const uploadPodcastFromBuffer = require('../utils/uploadPodcastFromBuffer')
 const ApiFeatures = require('../utils/apiFeatures')
 
 const getAllPodcasts = catchAsync(async (req, res, next) => {
-    const { status } = req.query
-    if (status) {
-        req.query.status = undefined
-    }
-    const data = new ApiFeatures(Podcast.find({ status: 'public' }), req.query)
+    const data = new ApiFeatures(
+        Podcast.find({}).populate('createdBy', 'name photo country language'),
+        req.query
+    )
         .filter()
         .sort()
         .limitFields()
@@ -24,7 +22,10 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
 
 const getMyPodcasts = catchAsync(async (req, res, next) => {
     const data = new ApiFeatures(
-        Podcast.find({ createdBy: req.user.id }),
+        Podcast.find({ createdBy: req.user.id }).populate(
+            'createdBy',
+            'name photo country language'
+        ),
         req.query
     )
         .filter()
@@ -39,11 +40,9 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
 const getPodcast = catchAsync(async (req, res, next) => {
     try {
         const { id: podcastId } = req.params
-        const { id: userId } = req.user
         const data = await Podcast.findOne({
             _id: podcastId,
-            createdBy: userId,
-        })
+        }).populate('createdBy', 'name photo country language')
         if (!data) {
             next(new AppError('Not found', StatusCodes.NOT_FOUND))
         }
@@ -57,20 +56,24 @@ const createPodcast = catchAsync(async (req, res, next) => {
     req.body.createdBy = req.user.id
     if (!req.file) {
         next(
-            new AppError('Please, provide the podcast', StatusCodes.BAD_REQUEST)
+            new AppError(
+                'Please, provide the podcast audio',
+                StatusCodes.BAD_REQUEST
+            )
         )
     }
-    const duration = await getAudioDuration(req.file.path)
-    const file = await uploader.upload(req.file.path, {
-        folder: 'podcasts',
-        resource_type: 'video',
-    })
+
+    const file = await uploadPodcastFromBuffer(req)
     console.log('file uploaded')
+
     const data = await Podcast.create({
         ...req.body,
-        audio: { url: file.secure_url, duration, publicID: file.public_id },
-    })
-    removeFile(req.file.path)
+        audio: {
+            url: file.secure_url,
+            duration: file.duration,
+            publicID: file.public_id,
+        },
+    }).populate('createdBy', 'name photo country language')
     res.status(StatusCodes.CREATED).json({ status: 'success', data })
 })
 
@@ -85,7 +88,7 @@ const updatePodcast = catchAsync(async (req, res, next) => {
                 new: true,
                 runValidators: true,
             }
-        )
+        ).populate('createdBy', 'name photo country language')
         if (!data) {
             next(new AppError('Not found', StatusCodes.NOT_FOUND))
         }
@@ -127,13 +130,12 @@ const searchPodcast = catchAsync(async (req, res, next) => {
             new AppError('Please, check search param', StatusCodes.BAD_REQUEST)
         )
     }
-    const data = await Podcast.find({
-        $text: {
-            $search: s,
-        },
-        status: 'public',
-    }).limit(10)
-
+    const data = await Podcast.find({ $text: { $search: s } }, '-score', {
+        score: { $meta: 'textScore' },
+    })
+        .populate('createdBy', 'name photo country language')
+        .sort({ score: { $meta: 'textScore' } })
+        .limit(10)
     res.status(StatusCodes.OK).json({ status: 'success', data })
 })
 

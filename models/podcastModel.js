@@ -10,10 +10,14 @@ const podcastSchema = new mongoose.Schema(
             minLength: [5, 'Please, name must be more than 5 characters'],
             maxLength: [60, 'Please, name must be less than 60 characters'],
         },
-        status: {
-            type: String,
-            enum: ['public', 'private'],
-            default: 'public',
+        // status: {
+        //     type: String,
+        //     enum: ['public', 'private'],
+        //     default: 'public',
+        // },
+        likes: {
+            type: Number,
+            default: 0,
         },
         category: {
             type: String,
