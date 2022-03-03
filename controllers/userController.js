@@ -2,6 +2,11 @@ const AppError = require('../utils/appError')
 const User = require('./../models/userModel')
 const catchAsync = require('./../utils/catchAsync')
 const factory = require('./handlerFactory')
+const { uploader } = require('../utils/cloudinary')
+const { StatusCodes } = require('http-status-codes')
+
+const { Readable } = require('stream')
+const sharp = require('sharp')
 
 const filterObj = (obj, ...allowedFeilds) => {
     const newObj = {}
@@ -31,6 +36,33 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         )
     }
 
+    if (req.file) {
+        const bufferToStream = (buffer) => {
+            const readable = new Readable({
+                read() {
+                    this.push(buffer)
+                    this.push(null)
+                },
+            })
+            return readable
+        }
+
+        const data = await sharp(req.file.buffer)
+            .webp({ quality: 20 })
+            .toBuffer()
+        const stream = uploader.upload_stream(
+            { folder: 'userPhotos' },
+            (error, result) => {
+                if (error)
+                    return next(
+                        new AppError(error.message, StatusCodes.BAD_REQUEST)
+                    )
+                req.body.photo = result.secure_url
+            }
+        )
+        bufferToStream(data).pipe(stream)
+    }
+
     // filtered out unwanted feild names
 
     const filteredBody = filterObj(
@@ -39,7 +71,8 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         'email',
         'language',
         'country',
-        'userType'
+        'userType',
+        'photo'
     )
 
     //Update user document
