@@ -31,10 +31,10 @@ const dUri = new DataURIParser()
 const dataUri = (req) =>
     dUri.format(path.extname(req.file.originalname).toString(), req.file.buffer)
 
-const convertImg = async (buffer, imgName) => {
-    const name = Date.now() + imgName
+const convertImg = async (file) => {
+    const name = Date.now() + file.originalname
     const path = `./uploads/${name}.webp`
-    const img = await sharp(buffer)
+    await sharp(file.buffer)
         .webp({ quality: 20 })
         .toFile(`./uploads/${name}.webp`)
     return path

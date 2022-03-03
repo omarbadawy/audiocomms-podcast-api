@@ -34,6 +34,17 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         )
     }
 
+    // Convert photo to webp and return photo path
+    const photoPath = await convertImg(req.file)
+    // upload photo to cloudinary
+    const photo = await uploader.upload(photoPath, {
+        folder: 'userPhotos',
+    })
+    // add photo url to req.body
+    req.body.photo = photo.secure_url
+    // remove the image from server
+    removeFile(photoPath)
+
     // filtered out unwanted feild names
 
     const filteredBody = filterObj(
