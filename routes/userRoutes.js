@@ -1,4 +1,5 @@
 const express = require('express')
+const { multerUploads } = require('../utils/multer')
 const {
     login,
     signup,
@@ -35,7 +36,7 @@ router.patch('/updateMyPassword', updatePassword)
 router.get('/', getAllUsers)
 router.get('/me', getMe, getFullUser)
 router.delete('/deleteMe', deleteMe)
-router.patch('/updateMe', updateMe)
+router.patch('/updateMe', multerUploads, updateMe)
 
 // Restrict all the routes to admin after this
 router.use(restrictTo('admin'))

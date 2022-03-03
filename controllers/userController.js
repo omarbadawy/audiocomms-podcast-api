@@ -2,6 +2,9 @@ const AppError = require('../utils/appError')
 const User = require('./../models/userModel')
 const catchAsync = require('./../utils/catchAsync')
 const factory = require('./handlerFactory')
+const { convertImg } = require('../utils/multer')
+const { uploader } = require('../utils/cloudinary')
+const removeFile = require('../utils/removeFile')
 
 const filterObj = (obj, ...allowedFeilds) => {
     const newObj = {}
@@ -39,7 +42,8 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         'email',
         'language',
         'country',
-        'userType'
+        'userType',
+        'photo'
     )
 
     //Update user document
