@@ -62,6 +62,7 @@ const createPodcast = catchAsync(async (req, res, next) => {
             )
         )
     }
+
     if (!audio.is_audio) {
         next(
             new AppError(
@@ -71,6 +72,7 @@ const createPodcast = catchAsync(async (req, res, next) => {
         )
     }
     req.body.audio = undefined
+
     let data = await Podcast.create({
         ...req.body,
         audio: {
@@ -80,9 +82,11 @@ const createPodcast = catchAsync(async (req, res, next) => {
         },
     })
 
+
     data = await data
         .populate('createdBy', 'name photo country language')
         .execPopulate()
+
     res.status(StatusCodes.CREATED).json({ status: 'success', data })
 })
 
