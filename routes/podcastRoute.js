@@ -10,12 +10,14 @@ const {
     deletePodcast,
     getMyPodcasts,
     searchPodcast,
+    generateSignature,
 } = require('../controllers/podcastController')
 
 const { uploadPodcast } = require('../utils/multer')
 
 router.use(protect)
 
+router.get('/generateSignature', generateSignature)
 router.get('/search', searchPodcast)
 router.get('/', getAllPodcasts)
 router.get('/me', getMyPodcasts)

@@ -2,8 +2,7 @@ const Podcast = require('../models/podcastModel')
 const catchAsync = require('../utils/catchAsync')
 const AppError = require('../utils/appError')
 const { StatusCodes } = require('http-status-codes')
-const { uploader } = require('../utils/cloudinary')
-const uploadPodcastFromBuffer = require('../utils/uploadPodcastFromBuffer')
+const { uploader, createImageUpload } = require('../utils/cloudinary')
 const ApiFeatures = require('../utils/apiFeatures')
 
 const getAllPodcasts = catchAsync(async (req, res, next) => {
@@ -54,26 +53,36 @@ const getPodcast = catchAsync(async (req, res, next) => {
 
 const createPodcast = catchAsync(async (req, res, next) => {
     req.body.createdBy = req.user.id
-    if (!req.file) {
+    const { audio } = req.body
+    if (!audio) {
         next(
             new AppError(
-                'Please, provide the podcast audio',
+                'Please, Provide the Audio Object',
                 StatusCodes.BAD_REQUEST
             )
         )
     }
 
-    const file = await uploadPodcastFromBuffer(req)
-    console.log('file uploaded')
+    if (!audio.is_audio) {
+        next(
+            new AppError(
+                'Not audio , make sure that you uploaded an audio',
+                StatusCodes.BAD_REQUEST
+            )
+        )
+    }
+    req.body.audio = undefined
 
     let data = await Podcast.create({
         ...req.body,
         audio: {
-            url: file.secure_url,
-            duration: file.duration,
-            publicID: file.public_id,
+            url: audio.secure_url,
+            duration: audio.duration,
+            publicID: audio.public_id,
         },
     })
+
+
     data = await data
         .populate('createdBy', 'name photo country language')
         .execPopulate()
@@ -110,6 +119,7 @@ const deletePodcast = catchAsync(async (req, res, next) => {
             _id: PodcastId,
             createdBy: userId,
         })
+        console.log(data)
         if (!data) {
             next(new AppError('Not found', StatusCodes.NOT_FOUND))
         }
@@ -143,6 +153,16 @@ const searchPodcast = catchAsync(async (req, res, next) => {
     res.status(StatusCodes.OK).json({ status: 'success', data })
 })
 
+const generateSignature = catchAsync(async (req, res, next) => {
+    const { timestamp, signature } = await createImageUpload()
+    res.status(StatusCodes.OK).json({
+        timestamp,
+        signature,
+        cloudName: process.env.CLOUD_NAME,
+        apiKey: process.env.CLOUD_API_KEY,
+    })
+})
+
 module.exports = {
     getAllPodcasts,
     getPodcast,
@@ -151,4 +171,5 @@ module.exports = {
     deletePodcast,
     getMyPodcasts,
     searchPodcast,
+    generateSignature,
 }
