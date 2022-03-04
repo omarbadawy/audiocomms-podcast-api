@@ -11,8 +11,8 @@ const compression = require('compression')
 const AppError = require('./utils/appError')
 const globalErrorHandler = require('./controllers/errorController')
 const userRouter = require('./routes/userRoutes')
-const podcastRouter = require('./routes/podcastRoute')
-// const categoryRouter = require('./routes/categoryRoutes')
+const podcastRouter = require('./routes/podcastRoutes')
+const categoryRouter = require('./routes/categoryRoutes')
 
 const app = express()
 
@@ -63,8 +63,7 @@ app.use(compression())
 // Mounting routers
 app.use('/api/v1/users', userRouter)
 app.use('/api/v1/podcasts', podcastRouter)
-
-// app.use('/api/v1/categories', categoryRouter)
+app.use('/api/v1/categories', categoryRouter)
 
 app.get('/', (req, res) => {
     res.status(404).json({
