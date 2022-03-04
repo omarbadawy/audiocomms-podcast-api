@@ -1,4 +1,4 @@
-const { config, uploader } = require('cloudinary').v2
+const { config, uploader, utils } = require('cloudinary').v2
 
 const cloudinaryConfig = (req, res, next) => {
     config({
@@ -8,7 +8,21 @@ const cloudinaryConfig = (req, res, next) => {
     })
 }
 
+const createImageUpload = async () => {
+    const timestamp = Math.round(new Date().getTime() / 1000)
+    const signature = utils.api_sign_request(
+        {
+            timestamp,
+            folder: 'potcasts',
+            eager: 'c_pad,h_300,w_400|c_crop,h_200,w_260',
+        },
+        process.env.CLOUD_API_SECRET
+    )
+    return { timestamp, signature }
+}
+
 module.exports = {
-    cloudinaryConfig,
+    createImageUpload,
     uploader,
+    cloudinaryConfig,
 }
