@@ -73,7 +73,7 @@ const createPodcast = catchAsync(async (req, res, next) => {
             duration: file.duration,
             publicID: file.public_id,
         },
-    }).populate('createdBy', 'name photo country language')
+    })
     res.status(StatusCodes.CREATED).json({ status: 'success', data })
 })
 
@@ -106,6 +106,7 @@ const deletePodcast = catchAsync(async (req, res, next) => {
             _id: PodcastId,
             createdBy: userId,
         })
+        console.log(data)
         if (!data) {
             next(new AppError('Not found', StatusCodes.NOT_FOUND))
         }
