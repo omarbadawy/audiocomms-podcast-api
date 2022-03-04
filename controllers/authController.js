@@ -40,9 +40,6 @@ exports.signup = catchAsync(async (req, res, next) => {
         userType: req.body.userType,
     })
 
-    // const url = `${req.protocol}://${req.get('host')}/me`
-    // await new Email(newUser, url).sendWelcome()
-
     createSendToken(newUser, 201, res)
 })
 
@@ -142,7 +139,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     // Send it back as an email
 
     try {
-        const resetURL = `https://food-order-react-app-eight.vercel.app/reset-password?token=${resetToken}`
+        const resetURL = `https://change-later.app/reset-password?token=${resetToken}`
 
         await new Email(user, resetURL).sendPasswordReset()
 
