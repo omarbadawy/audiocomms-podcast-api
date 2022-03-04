@@ -66,14 +66,18 @@ const createPodcast = catchAsync(async (req, res, next) => {
     const file = await uploadPodcastFromBuffer(req)
     console.log('file uploaded')
 
-    const data = await Podcast.create({
+    let data = await Podcast.create({
         ...req.body,
         audio: {
             url: file.secure_url,
             duration: file.duration,
             publicID: file.public_id,
         },
-    }).populate('createdBy', 'name photo country language')
+    })
+    data = await data
+        .populate('createdBy', 'name photo country language')
+        .execPopulate()
+
     res.status(StatusCodes.CREATED).json({ status: 'success', data })
 })
 
