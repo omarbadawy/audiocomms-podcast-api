@@ -1,4 +1,5 @@
 const Podcast = require('../models/podcastModel')
+const Category = require('../models/categoryModel')
 const catchAsync = require('../utils/catchAsync')
 const AppError = require('../utils/appError')
 const { StatusCodes } = require('http-status-codes')
@@ -53,7 +54,7 @@ const getPodcast = catchAsync(async (req, res, next) => {
 
 const createPodcast = catchAsync(async (req, res, next) => {
     req.body.createdBy = req.user.id
-    const { audio } = req.body
+    const { audio, category } = req.body
     if (!audio) {
         next(
             new AppError(
@@ -62,9 +63,12 @@ const createPodcast = catchAsync(async (req, res, next) => {
             )
         )
     }
-
-    if (!audio.is_audio) {
-        next(
+    const audioTypes = ['wav', 'mp3', 'mp4', 'wma', 'flac', 'm4a']
+    const isAudio = (audio) => {
+        return audioTypes.some((suffix) => audio.secure_url.endsWith(suffix))
+    }
+    if (!isAudio(audio)) {
+        return next(
             new AppError(
                 'Not audio , make sure that you uploaded an audio',
                 StatusCodes.BAD_REQUEST
@@ -72,6 +76,19 @@ const createPodcast = catchAsync(async (req, res, next) => {
         )
     }
     req.body.audio = undefined
+
+    if (category) {
+        const categoryData = await Category.findOne({ name: category })
+
+        if (!categoryData) {
+            return next(
+                new AppError(
+                    'There is no category with this name',
+                    StatusCodes.BAD_REQUEST
+                )
+            )
+        }
+    }
 
     let data = await Podcast.create({
         ...req.body,
@@ -81,7 +98,6 @@ const createPodcast = catchAsync(async (req, res, next) => {
             publicID: audio.public_id,
         },
     })
-
 
     data = await data
         .populate('createdBy', 'name photo country language')
@@ -94,16 +110,30 @@ const updatePodcast = catchAsync(async (req, res, next) => {
     try {
         const { id: PodcastId } = req.params
         const { id: userId } = req.user
+        const { category, name } = req.body
+
+        if (category) {
+            const categoryData = await Category.findOne({ name: category })
+
+            if (!categoryData) {
+                return next(
+                    new AppError(
+                        'There is no category with this name',
+                        StatusCodes.BAD_REQUEST
+                    )
+                )
+            }
+        }
         const data = await Podcast.findOneAndUpdate(
             { _id: PodcastId, createdBy: userId },
-            req.body,
+            { category, name },
             {
                 new: true,
                 runValidators: true,
             }
         ).populate('createdBy', 'name photo country language')
         if (!data) {
-            next(new AppError('Not found', StatusCodes.NOT_FOUND))
+            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
         }
         res.status(StatusCodes.OK).json({ status: 'success', data })
     } catch (error) {
@@ -119,9 +149,9 @@ const deletePodcast = catchAsync(async (req, res, next) => {
             _id: PodcastId,
             createdBy: userId,
         })
-        console.log(data)
+
         if (!data) {
-            next(new AppError('Not found', StatusCodes.NOT_FOUND))
+            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
         }
 
         await uploader.destroy(data.audio.publicID, {
@@ -140,7 +170,7 @@ const deletePodcast = catchAsync(async (req, res, next) => {
 const searchPodcast = catchAsync(async (req, res, next) => {
     const { s } = req.query
     if (!s) {
-        next(
+        return next(
             new AppError('Please, check search param', StatusCodes.BAD_REQUEST)
         )
     }
