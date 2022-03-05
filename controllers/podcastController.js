@@ -110,7 +110,7 @@ const updatePodcast = catchAsync(async (req, res, next) => {
     try {
         const { id: PodcastId } = req.params
         const { id: userId } = req.user
-        const { category } = req.body
+        const { category, name } = req.body
 
         if (category) {
             const categoryData = await Category.findOne({ name: category })
@@ -126,7 +126,7 @@ const updatePodcast = catchAsync(async (req, res, next) => {
         }
         const data = await Podcast.findOneAndUpdate(
             { _id: PodcastId, createdBy: userId },
-            req.body,
+            { category, name },
             {
                 new: true,
                 runValidators: true,
