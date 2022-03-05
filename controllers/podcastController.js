@@ -1,4 +1,5 @@
 const Podcast = require('../models/podcastModel')
+const Likes = require('../models/likesModel')
 const Category = require('../models/categoryModel')
 const catchAsync = require('../utils/catchAsync')
 const AppError = require('../utils/appError')
@@ -40,13 +41,26 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
 const getPodcast = catchAsync(async (req, res, next) => {
     try {
         const { id: podcastId } = req.params
+        const { id: userId } = req.user
+
         const data = await Podcast.findOne({
             _id: podcastId,
         }).populate('createdBy', 'name photo country language')
+
         if (!data) {
-            next(new AppError('Not found', StatusCodes.NOT_FOUND))
+            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
         }
-        res.status(StatusCodes.OK).json({ status: 'success', data })
+
+        const userLike = await Likes.findOne({
+            likeTo: podcastId,
+            likeBy: userId,
+        })
+
+        res.status(StatusCodes.OK).json({
+            status: 'success',
+            data,
+            isLiked: userLike ? true : false,
+        })
     } catch (error) {
         next(new AppError(error.message, StatusCodes.BAD_REQUEST))
     }
@@ -56,7 +70,7 @@ const createPodcast = catchAsync(async (req, res, next) => {
     req.body.createdBy = req.user.id
     const { audio, category } = req.body
     if (!audio) {
-        next(
+        return next(
             new AppError(
                 'Please, Provide the Audio Object',
                 StatusCodes.BAD_REQUEST

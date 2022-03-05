@@ -1,5 +1,7 @@
 const express = require('express')
 
+const likesRouter = require('./likesRoute')
+
 const router = express.Router()
 const { protect } = require('../controllers/authController')
 const {
@@ -17,13 +19,17 @@ const { uploadPodcast } = require('../utils/multer')
 
 router.use(protect)
 
-router.get('/generateSignature', generateSignature)
-router.get('/search', searchPodcast)
 router.get('/', getAllPodcasts)
-router.get('/me', getMyPodcasts)
 router.get('/:id', getPodcast)
+router.get('/me', getMyPodcasts)
+
 router.post('/', uploadPodcast, createPodcast)
 router.patch('/:id', updatePodcast)
 router.delete('/:id', deletePodcast)
+
+router.get('/search', searchPodcast)
+router.get('/generateSignature', generateSignature)
+
+router.use('/likes', likesRouter)
 
 module.exports = router
