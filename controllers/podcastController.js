@@ -20,18 +20,32 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
     const query = await data.query
 
     const podcastsData = JSON.parse(JSON.stringify(query))
+    const podcastsId = []
+
+    podcastsData.forEach((podcast) => podcastsId.push(podcast._id))
+
+    let podcastsLike = await Likes.find({
+        podcastId: {
+            $in: podcastsId,
+        },
+    })
+
+    podcastsLike = JSON.parse(JSON.stringify(podcastsLike))
 
     for (let podcast of podcastsData) {
-        const podcastLike = await Likes.findOne({
-            likeTo: podcast._id,
-            likeBy: userId,
-        })
-        podcast.isLiked = podcastLike ? true : false
+        for (let item of podcastsLike) {
+            if (podcast._id === item.podcastId) {
+                podcast.isLiked = true
+                break
+            }
+            podcast.isLiked = false
+        }
     }
 
     res.status(StatusCodes.OK).json({
         status: 'success',
         data: podcastsData,
+        nbHids: podcastsData.length,
     })
 })
 
@@ -52,16 +66,33 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
     const query = await data.query
 
     const podcastsData = JSON.parse(JSON.stringify(query))
+    const podcastsId = []
+
+    podcastsData.forEach((podcast) => podcastsId.push(podcast._id))
+
+    let podcastsLike = await Likes.find({
+        podcastId: {
+            $in: podcastsId,
+        },
+    })
+
+    podcastsLike = JSON.parse(JSON.stringify(podcastsLike))
 
     for (let podcast of podcastsData) {
-        const podcastLike = await Likes.findOne({
-            likeTo: podcast._id,
-            likeBy: userId,
-        })
-        podcast.isLiked = podcastLike ? true : false
+        for (let item of podcastsLike) {
+            if (podcast._id === item.podcastId) {
+                podcast.isLiked = true
+                break
+            }
+            podcast.isLiked = false
+        }
     }
 
-    res.status(StatusCodes.OK).json({ status: 'success', data: podcastsData })
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: podcastsData,
+        nbHids: podcastsData.length,
+    })
 })
 
 const getPodcast = catchAsync(async (req, res, next) => {

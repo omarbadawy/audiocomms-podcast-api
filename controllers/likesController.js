@@ -7,7 +7,7 @@ const { StatusCodes } = require('http-status-codes')
 
 const getMyLikes = catchAsync(async (req, res, next) => {
     const data = new ApiFeatures(
-        Likes.find({ likeBy: req.user.id }).populate('likeTo'),
+        Likes.find({ userId: req.user.id }).populate('podcastId'),
         req.query
     )
         .filter()
@@ -33,8 +33,8 @@ const addLike = catchAsync(async (req, res, next) => {
         }
 
         const oldData = await Likes.findOne({
-            likeTo: podcastId,
-            likeBy: userId,
+            podcastId,
+            userId,
         })
 
         if (oldData) {
@@ -47,8 +47,8 @@ const addLike = catchAsync(async (req, res, next) => {
         }
 
         const data = await Likes.create({
-            likeTo: podcastId,
-            likeBy: userId,
+            podcastId,
+            userId,
         })
 
         if (data) {
@@ -69,8 +69,8 @@ const removeLike = catchAsync(async (req, res, next) => {
         const { id: userId } = req.user
 
         const data = await Likes.findOneAndRemove({
-            likeTo: podcastId,
-            likeBy: userId,
+            podcastId,
+            userId,
         })
 
         if (!data) {

@@ -2,11 +2,11 @@ const mongoose = require('mongoose')
 
 const likesSchema = new mongoose.Schema(
     {
-        likeTo: {
+        podcastId: {
             type: mongoose.Types.ObjectId,
             ref: 'Podcast',
         },
-        likeBy: {
+        userId: {
             type: mongoose.Types.ObjectId,
             ref: 'User',
         },
