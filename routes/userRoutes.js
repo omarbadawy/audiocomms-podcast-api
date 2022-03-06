@@ -16,11 +16,13 @@ const {
     getAllFullUsers,
     getAllUsers,
     getMe,
+    getUser,
     getFullUser,
     updateUser,
     updateMe,
 } = require('../controllers/userController')
 
+const { followUser } = require('../controllers/followController')
 const router = express.Router()
 
 router.post('/signup', signup)
@@ -35,6 +37,8 @@ router.patch('/updateMyPassword', updatePassword)
 
 router.get('/', getAllUsers)
 router.get('/me', getMe, getFullUser)
+router.get('/:id', getUser)
+router.post('/:userId/following', followUser)
 router.delete('/deleteMe', deleteMe)
 router.patch('/updateMe', multerUploads, updateMe)
 

@@ -1,6 +1,8 @@
 const AppError = require('../utils/appError')
-const User = require('./../models/userModel')
-const catchAsync = require('./../utils/catchAsync')
+const User = require('../models/userModel')
+const Follow = require('../models/followModel')
+const APIFeatures = require('../utils/apiFeatures')
+const catchAsync = require('../utils/catchAsync')
 const factory = require('./handlerFactory')
 const { uploader } = require('../utils/cloudinary')
 const { StatusCodes } = require('http-status-codes')
@@ -23,7 +25,75 @@ exports.getMe = (req, res, next) => {
     next()
 }
 
-exports.getAllUsers = factory.getAll(User)
+exports.getUser = catchAsync(async (req, res, next) => {
+    const user = await User.findById(req.params.id).lean()
+
+    if (!user) {
+        return next(
+            new AppError('There is no user with that ID', StatusCodes.NOT_FOUND)
+        )
+    }
+
+    const followedByMe = await Follow.findOne({
+        follower: req.user.id,
+        following: req.params.id,
+    }).lean()
+
+    user.isFollowed = followedByMe ? true : false
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: user,
+    })
+})
+
+exports.getAllUsers = catchAsync(async (req, res, next) => {
+    const featuresBeforePagination = new APIFeatures(
+        User.find(),
+        req.query
+    ).filter()
+
+    const features = new APIFeatures(User.find(), req.query)
+        .filter()
+        .sort()
+        .limitFields()
+        .paginate()
+
+    // const docs = await features.query.explain()
+    let users = await features.query
+        .select('-role -passwordResetToken -passwordResetExpires')
+        .lean()
+
+    const usersIds = []
+
+    users.forEach((user) => usersIds.push(user._id))
+
+    let usersFollowedByMe = await Follow.find(
+        {
+            follower: req.user.id,
+            following: { $in: usersIds },
+        },
+        { following: 1, _id: 0 }
+    ).lean()
+
+    users.forEach((user) => {
+        user.isFollowed = usersFollowedByMe.some(
+            (userFollowed) =>
+                userFollowed.following.toString() === user._id.toString()
+        )
+    })
+
+    const docsCount = await User.countDocuments(featuresBeforePagination.query)
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        results: users.length,
+        docsCount,
+        data: {
+            data: users,
+        },
+    })
+})
 
 exports.updateMe = catchAsync(async (req, res, next) => {
     // 1) Create error if user POSTs password data
