@@ -23,6 +23,15 @@ const addLike = catchAsync(async (req, res, next) => {
         const { id: podcastId } = req.params
         const { id: userId } = req.user
 
+        if (!podcastId) {
+            return next(
+                new AppError(
+                    'Please, check the podcast id param',
+                    StatusCodes.BAD_REQUEST
+                )
+            )
+        }
+
         const oldData = await Likes.findOne({
             likeTo: podcastId,
             likeBy: userId,

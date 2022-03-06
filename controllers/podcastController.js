@@ -8,6 +8,7 @@ const { uploader, createImageUpload } = require('../utils/cloudinary')
 const ApiFeatures = require('../utils/apiFeatures')
 
 const getAllPodcasts = catchAsync(async (req, res, next) => {
+    const { id: userId } = req.user
     const data = new ApiFeatures(
         Podcast.find({}).populate('createdBy', 'name photo country language'),
         req.query
@@ -18,7 +19,20 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
         .paginate()
     const query = await data.query
 
-    res.status(StatusCodes.OK).json({ status: 'success', data: query })
+    const podcastsData = JSON.parse(JSON.stringify(query))
+
+    for (let podcast of podcastsData) {
+        const podcastLike = await Likes.findOne({
+            likeTo: podcast._id,
+            likeBy: userId,
+        })
+        podcast.isLiked = podcastLike ? true : false
+    }
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: podcastsData,
+    })
 })
 
 const getMyPodcasts = catchAsync(async (req, res, next) => {
