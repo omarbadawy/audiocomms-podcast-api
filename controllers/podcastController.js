@@ -8,7 +8,12 @@ const { uploader, createImageUpload } = require('../utils/cloudinary')
 const ApiFeatures = require('../utils/apiFeatures')
 
 const getAllPodcasts = catchAsync(async (req, res, next) => {
-    const { id: userId } = req.user
+    // const { id: userId } = req.user
+    const allData = new ApiFeatures(
+        Podcast.find({}).populate('podcastId'),
+        req.query
+    ).filter()
+
     const data = new ApiFeatures(
         Podcast.find({}).populate('createdBy', 'name photo country language'),
         req.query
@@ -42,15 +47,28 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
         }
     }
 
+    const docs = query.length
+    const page = req.query.page || 1
+    const limit = req.query.limit || 10
+    const remainingDocs =
+        docs !== 0 && docs == limit
+            ? (await Podcast.countDocuments(allData.query)) - docs * page
+            : 0
+
     res.status(StatusCodes.OK).json({
         status: 'success',
         data: podcastsData,
-        nbHids: podcastsData.length,
+        docs,
+        remainingDocs,
     })
 })
 
 const getMyPodcasts = catchAsync(async (req, res, next) => {
     const { id: userId } = req.user
+    const allData = new ApiFeatures(
+        Podcast.find({ createdBy: userId }).populate('podcastId'),
+        req.query
+    ).filter()
 
     const data = new ApiFeatures(
         Podcast.find({ createdBy: userId }).populate(
@@ -88,10 +106,19 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
         }
     }
 
+    const docs = query.length
+    const page = req.query.page || 1
+    const limit = req.query.limit || 10
+    const remainingDocs =
+        docs !== 0 && docs == limit
+            ? (await Podcast.countDocuments(allData.query)) - docs * page
+            : 0
+
     res.status(StatusCodes.OK).json({
         status: 'success',
         data: podcastsData,
-        nbHids: podcastsData.length,
+        docs,
+        remainingDocs,
     })
 })
 
