@@ -89,9 +89,7 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
         status: 'success',
         results: users.length,
         docsCount,
-        data: {
-            data: users,
-        },
+        data: users,
     })
 })
 
@@ -167,6 +165,9 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
         active: false,
     })
 
+    await Follow.deleteMany({ follower: req.user.id })
+    await Follow.deleteMany({ following: req.user.id })
+
     res.status(204).json({
         status: 'success',
         data: null,
@@ -180,4 +181,18 @@ exports.getFullUser = factory.getOne(User, true)
 // Don't update passwords with this
 exports.updateUser = factory.updateOne(User)
 
-exports.deleteUser = factory.deleteOne(User)
+exports.deleteUser = catchAsync(async (req, res, next) => {
+    const doc = await User.findByIdAndDelete(req.params.id)
+
+    if (!doc) {
+        return next(new AppError('No document Found With That ID', 404))
+    }
+
+    await Follow.deleteMany({ follower: req.user.id })
+    await Follow.deleteMany({ following: req.user.id })
+
+    res.status(204).json({
+        status: 'success',
+        data: null,
+    })
+})

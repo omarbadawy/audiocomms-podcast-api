@@ -22,7 +22,13 @@ const {
     updateMe,
 } = require('../controllers/userController')
 
-const { followUser } = require('../controllers/followController')
+const {
+    followUser,
+    getUserFollowing,
+    unFollowUser,
+    getUserFollowers,
+} = require('../controllers/followController')
+
 const router = express.Router()
 
 router.post('/signup', signup)
@@ -38,7 +44,16 @@ router.patch('/updateMyPassword', updatePassword)
 router.get('/', getAllUsers)
 router.get('/me', getMe, getFullUser)
 router.get('/:id', getUser)
-router.post('/:userId/following', followUser)
+
+router.get('/me/following', getMe, getUserFollowing)
+router.get('/me/followers', getMe, getUserFollowers)
+router
+    .route('/:id/following')
+    .get(getUserFollowing)
+    .post(followUser)
+    .delete(unFollowUser)
+router.get('/:id/followers', getUserFollowers)
+
 router.delete('/deleteMe', deleteMe)
 router.patch('/updateMe', multerUploads, updateMe)
 
