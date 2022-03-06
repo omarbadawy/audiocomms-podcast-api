@@ -36,8 +36,10 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
 })
 
 const getMyPodcasts = catchAsync(async (req, res, next) => {
+    const { id: userId } = req.user
+
     const data = new ApiFeatures(
-        Podcast.find({ createdBy: req.user.id }).populate(
+        Podcast.find({ createdBy: userId }).populate(
             'createdBy',
             'name photo country language'
         ),
@@ -49,7 +51,17 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
         .paginate()
     const query = await data.query
 
-    res.status(StatusCodes.OK).json({ status: 'success', data: query })
+    const podcastsData = JSON.parse(JSON.stringify(query))
+
+    for (let podcast of podcastsData) {
+        const podcastLike = await Likes.findOne({
+            likeTo: podcast._id,
+            likeBy: userId,
+        })
+        podcast.isLiked = podcastLike ? true : false
+    }
+
+    res.status(StatusCodes.OK).json({ status: 'success', data: podcastsData })
 })
 
 const getPodcast = catchAsync(async (req, res, next) => {
@@ -57,7 +69,7 @@ const getPodcast = catchAsync(async (req, res, next) => {
         const { id: podcastId } = req.params
         const { id: userId } = req.user
 
-        const data = await Podcast.findOne({
+        let data = await Podcast.findOne({
             _id: podcastId,
         }).populate('createdBy', 'name photo country language')
 
@@ -70,10 +82,11 @@ const getPodcast = catchAsync(async (req, res, next) => {
             likeBy: userId,
         })
 
+        data = JSON.parse(JSON.stringify(data))
+        data.isLiked = userLike ? true : false
         res.status(StatusCodes.OK).json({
             status: 'success',
             data,
-            isLiked: userLike ? true : false,
         })
     } catch (error) {
         next(new AppError(error.message, StatusCodes.BAD_REQUEST))
