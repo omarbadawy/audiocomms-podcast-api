@@ -1,4 +1,5 @@
 const Podcast = require('../models/podcastModel')
+const Likes = require('../models/likesModel')
 const Category = require('../models/categoryModel')
 const catchAsync = require('../utils/catchAsync')
 const AppError = require('../utils/appError')
@@ -7,6 +8,7 @@ const { uploader, createImageUpload } = require('../utils/cloudinary')
 const ApiFeatures = require('../utils/apiFeatures')
 
 const getAllPodcasts = catchAsync(async (req, res, next) => {
+    const { id: userId } = req.user
     const data = new ApiFeatures(
         Podcast.find({}).populate('createdBy', 'name photo country language'),
         req.query
@@ -17,12 +19,41 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
         .paginate()
     const query = await data.query
 
-    res.status(StatusCodes.OK).json({ status: 'success', data: query })
+    const podcastsData = JSON.parse(JSON.stringify(query))
+    const podcastsId = []
+
+    podcastsData.forEach((podcast) => podcastsId.push(podcast._id))
+
+    let podcastsLike = await Likes.find({
+        podcastId: {
+            $in: podcastsId,
+        },
+    })
+
+    podcastsLike = JSON.parse(JSON.stringify(podcastsLike))
+
+    for (let podcast of podcastsData) {
+        for (let item of podcastsLike) {
+            if (podcast._id === item.podcastId) {
+                podcast.isLiked = true
+                break
+            }
+            podcast.isLiked = false
+        }
+    }
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: podcastsData,
+        nbHids: podcastsData.length,
+    })
 })
 
 const getMyPodcasts = catchAsync(async (req, res, next) => {
+    const { id: userId } = req.user
+
     const data = new ApiFeatures(
-        Podcast.find({ createdBy: req.user.id }).populate(
+        Podcast.find({ createdBy: userId }).populate(
             'createdBy',
             'name photo country language'
         ),
@@ -34,19 +65,60 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
         .paginate()
     const query = await data.query
 
-    res.status(StatusCodes.OK).json({ status: 'success', data: query })
+    const podcastsData = JSON.parse(JSON.stringify(query))
+    const podcastsId = []
+
+    podcastsData.forEach((podcast) => podcastsId.push(podcast._id))
+
+    let podcastsLike = await Likes.find({
+        podcastId: {
+            $in: podcastsId,
+        },
+    })
+
+    podcastsLike = JSON.parse(JSON.stringify(podcastsLike))
+
+    for (let podcast of podcastsData) {
+        for (let item of podcastsLike) {
+            if (podcast._id === item.podcastId) {
+                podcast.isLiked = true
+                break
+            }
+            podcast.isLiked = false
+        }
+    }
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: podcastsData,
+        nbHids: podcastsData.length,
+    })
 })
 
 const getPodcast = catchAsync(async (req, res, next) => {
     try {
         const { id: podcastId } = req.params
-        const data = await Podcast.findOne({
+        const { id: userId } = req.user
+
+        let data = await Podcast.findOne({
             _id: podcastId,
         }).populate('createdBy', 'name photo country language')
+
         if (!data) {
-            next(new AppError('Not found', StatusCodes.NOT_FOUND))
+            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
         }
-        res.status(StatusCodes.OK).json({ status: 'success', data })
+
+        const userLike = await Likes.findOne({
+            likeTo: podcastId,
+            likeBy: userId,
+        })
+
+        data = JSON.parse(JSON.stringify(data))
+        data.isLiked = userLike ? true : false
+        res.status(StatusCodes.OK).json({
+            status: 'success',
+            data,
+        })
     } catch (error) {
         next(new AppError(error.message, StatusCodes.BAD_REQUEST))
     }
@@ -56,7 +128,7 @@ const createPodcast = catchAsync(async (req, res, next) => {
     req.body.createdBy = req.user.id
     const { audio, category } = req.body
     if (!audio) {
-        next(
+        return next(
             new AppError(
                 'Please, Provide the Audio Object',
                 StatusCodes.BAD_REQUEST
