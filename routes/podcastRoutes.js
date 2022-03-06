@@ -21,14 +21,15 @@ router.use(protect)
 
 router.get('/', getAllPodcasts)
 router.get('/me', getMyPodcasts)
+
+router.get('/search', searchPodcast)
+router.get('/generateSignature', generateSignature)
+
 router.get('/:id', getPodcast)
 
 router.post('/', uploadPodcast, createPodcast)
 router.patch('/:id', updatePodcast)
 router.delete('/:id', deletePodcast)
-
-router.get('/search', searchPodcast)
-router.get('/generateSignature', generateSignature)
 
 router.use('/likes', likesRouter)
 

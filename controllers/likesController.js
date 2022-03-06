@@ -6,8 +6,14 @@ const AppError = require('../utils/appError')
 const { StatusCodes } = require('http-status-codes')
 
 const getMyLikes = catchAsync(async (req, res, next) => {
+    const { id: userId } = req.user
+    const allData = new ApiFeatures(
+        Likes.find({ userId }).populate('podcastId'),
+        req.query
+    ).filter()
+
     const data = new ApiFeatures(
-        Likes.find({ userId: req.user.id }).populate('podcastId'),
+        Likes.find({ userId }).populate('podcastId'),
         req.query
     )
         .filter()
@@ -16,7 +22,69 @@ const getMyLikes = catchAsync(async (req, res, next) => {
         .paginate()
     const query = await data.query
 
-    res.status(StatusCodes.OK).json({ status: 'success', data: query })
+    const docs = query.length
+    const page = req.query.page || 1
+    const limit = req.query.limit || 10
+    const remainingDocs =
+        docs !== 0 && docs == limit
+            ? (await Podcast.countDocuments(allData.query)) - docs * page
+            : 0
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: query,
+        docs,
+        remainingDocs,
+    })
+})
+const getPodcastLikes = catchAsync(async (req, res, next) => {
+    try {
+        // const { id: userId } = req.user
+        const { id: podcastId } = req.params
+
+        if (!podcastId) {
+            return next(
+                new AppError(
+                    'Please, check the podcast id param',
+                    StatusCodes.BAD_REQUEST
+                )
+            )
+        }
+
+        const allData = new ApiFeatures(
+            Likes.find({ podcastId }).populate('podcastId'),
+            req.query
+        ).filter()
+
+        const data = new ApiFeatures(
+            Likes.find({ podcastId }).populate(
+                'userId',
+                'name photo country language'
+            ),
+            req.query
+        )
+            .filter()
+            .sort()
+            .limitFields()
+            .paginate()
+        const query = await data.query
+
+        const docs = query.length
+        const page = req.query.page || 1
+        const limit = req.query.limit || 10
+        const remainingDocs =
+            docs !== 0 && docs == limit
+                ? (await Podcast.countDocuments(allData.query)) - docs * page
+                : 0
+
+        res.status(StatusCodes.OK).json({
+            status: 'success',
+            data: query,
+            docs,
+            remainingDocs,
+        })
+    } catch (error) {
+        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    }
 })
 const addLike = catchAsync(async (req, res, next) => {
     try {
@@ -91,4 +159,5 @@ module.exports = {
     getMyLikes,
     addLike,
     removeLike,
+    getPodcastLikes,
 }
