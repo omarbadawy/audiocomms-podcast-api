@@ -26,7 +26,9 @@ exports.getMe = (req, res, next) => {
 }
 
 exports.getUser = catchAsync(async (req, res, next) => {
-    const user = await User.findById(req.params.id).lean()
+    const user = await User.findById(req.params.id)
+        .select('-active -role')
+        .lean()
 
     if (!user) {
         return next(
@@ -61,7 +63,7 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
 
     // const docs = await features.query.explain()
     let users = await features.query
-        .select('-role -passwordResetToken -passwordResetExpires')
+        .select('-role -passwordResetToken -passwordResetExpires -active')
         .lean()
 
     const usersIds = []
@@ -171,6 +173,47 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
     res.status(204).json({
         status: 'success',
         data: null,
+    })
+})
+
+exports.getUnfollowedUsers = catchAsync(async (req, res, next) => {
+    const followedUsers = await Follow.find(
+        { follower: req.user.id },
+        { following: 1, _id: 0 }
+    )
+
+    const usersIds = []
+
+    if (followedUsers) {
+        followedUsers.forEach((user) => usersIds.push(user.following))
+    }
+
+    const featuresBeforePagination = new APIFeatures(
+        User.find({ _id: { $nin: usersIds } }),
+        req.query
+    ).filter()
+
+    const features = new APIFeatures(
+        User.find({ _id: { $nin: usersIds } }),
+        req.query
+    )
+        .filter()
+        .sort()
+        .limitFields()
+        .paginate()
+
+    // const docs = await features.query.explain()
+    let users = await features.query
+        .select('-role -passwordResetToken -passwordResetExpires -active')
+        .lean()
+
+    const docsCount = await User.countDocuments(featuresBeforePagination.query)
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        docsCount,
+        results: users.length,
+        data: users,
     })
 })
 

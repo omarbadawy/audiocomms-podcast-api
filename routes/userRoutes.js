@@ -20,6 +20,7 @@ const {
     getFullUser,
     updateUser,
     updateMe,
+    getUnfollowedUsers,
 } = require('../controllers/userController')
 
 const {
@@ -42,6 +43,7 @@ router.use(protect)
 router.patch('/updateMyPassword', updatePassword)
 
 router.get('/', getAllUsers)
+router.get('/discover', getUnfollowedUsers)
 router.get('/me', getMe, getFullUser)
 router.get('/:id', getUser)
 
