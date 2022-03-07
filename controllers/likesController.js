@@ -22,18 +22,12 @@ const getMyLikes = catchAsync(async (req, res, next) => {
         .paginate()
     const query = await data.query
 
-    const docs = query.length
-    const page = req.query.page || 1
-    const limit = req.query.limit || 10
-    const remainingDocs =
-        docs !== 0 && docs == limit
-            ? (await Podcast.countDocuments(allData.query)) - docs * page
-            : 0
+    const docsCount = await Podcast.countDocuments(allData.query)
+
     res.status(StatusCodes.OK).json({
         status: 'success',
         data: query,
-        docs,
-        remainingDocs,
+        docsCount,
     })
 })
 const getPodcastLikes = catchAsync(async (req, res, next) => {
@@ -68,19 +62,12 @@ const getPodcastLikes = catchAsync(async (req, res, next) => {
             .paginate()
         const query = await data.query
 
-        const docs = query.length
-        const page = req.query.page || 1
-        const limit = req.query.limit || 10
-        const remainingDocs =
-            docs !== 0 && docs == limit
-                ? (await Podcast.countDocuments(allData.query)) - docs * page
-                : 0
+        const docsCount = await Podcast.countDocuments(allData.query)
 
         res.status(StatusCodes.OK).json({
             status: 'success',
             data: query,
-            docs,
-            remainingDocs,
+            docsCount,
         })
     } catch (error) {
         next(new AppError(error.message, StatusCodes.BAD_REQUEST))

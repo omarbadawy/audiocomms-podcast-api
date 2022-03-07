@@ -9,7 +9,6 @@ const { uploader, createImageUpload } = require('../utils/cloudinary')
 const ApiFeatures = require('../utils/apiFeatures')
 
 const getAllPodcasts = catchAsync(async (req, res, next) => {
-    // const { id: userId } = req.user
     const allData = new ApiFeatures(
         Podcast.find({}).populate('podcastId'),
         req.query
@@ -48,19 +47,12 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
         }
     }
 
-    const docs = query.length
-    const page = req.query.page || 1
-    const limit = req.query.limit || 10
-    const remainingDocs =
-        docs !== 0 && docs == limit
-            ? (await Podcast.countDocuments(allData.query)) - docs * page
-            : 0
+    const docsCount = await Podcast.countDocuments(allData.query)
 
     res.status(StatusCodes.OK).json({
         status: 'success',
         data: podcastsData,
-        docs,
-        remainingDocs,
+        docsCount,
     })
 })
 
@@ -107,19 +99,12 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
         }
     }
 
-    const docs = query.length
-    const page = req.query.page || 1
-    const limit = req.query.limit || 10
-    const remainingDocs =
-        docs !== 0 && docs == limit
-            ? (await Podcast.countDocuments(allData.query)) - docs * page
-            : 0
+    const docsCount = await Podcast.countDocuments(allData.query)
 
     res.status(StatusCodes.OK).json({
         status: 'success',
         data: podcastsData,
-        docs,
-        remainingDocs,
+        docsCount,
     })
 })
 
@@ -303,20 +288,12 @@ const getMyFollowingPodcasts = catchAsync(async (req, res, next) => {
 
     podcastsData = JSON.parse(JSON.stringify(await podcastsData.query))
 
-    const docs = podcastsData.length
-    const page = req.query.page || 1
-    const limit = req.query.limit || 10
-    const remainingDocs =
-        docs !== 0 && docs == limit
-            ? (await Podcast.countDocuments(allPodcastsData.query)) -
-              docs * page
-            : 0
+    const docsCount = await Podcast.countDocuments(allPodcastsData.query)
 
     res.status(StatusCodes.OK).json({
         status: 'success',
         data: podcastsData,
-        docs,
-        remainingDocs,
+        docsCount,
     })
 })
 
