@@ -11,6 +11,7 @@ const {
     updatePodcast,
     deletePodcast,
     getMyPodcasts,
+    getMyFollowingPodcasts,
     searchPodcast,
     generateSignature,
 } = require('../controllers/podcastController')
@@ -21,6 +22,7 @@ router.use(protect)
 
 router.get('/', getAllPodcasts)
 router.get('/me', getMyPodcasts)
+router.get('/following/me', getMyFollowingPodcasts)
 
 router.get('/search', searchPodcast)
 router.get('/generateSignature', generateSignature)

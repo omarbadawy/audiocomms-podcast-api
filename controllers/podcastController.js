@@ -1,5 +1,6 @@
 const Podcast = require('../models/podcastModel')
 const Likes = require('../models/likesModel')
+const Follow = require('../models/followModel')
 const Category = require('../models/categoryModel')
 const catchAsync = require('../utils/catchAsync')
 const AppError = require('../utils/appError')
@@ -266,6 +267,59 @@ const deletePodcast = catchAsync(async (req, res, next) => {
     }
 })
 
+const getMyFollowingPodcasts = catchAsync(async (req, res, next) => {
+    const { id: userId } = req.user
+
+    let followingData = await Follow.find({ follower: userId }).select(
+        'following'
+    )
+
+    followingData = JSON.parse(JSON.stringify(followingData))
+    const followingIds = []
+
+    followingData.forEach((item) => followingIds.push(item.following))
+
+    const allPodcastsData = new ApiFeatures(
+        Podcast.find({
+            createdBy: {
+                $in: followingIds,
+            },
+        }).populate('createdBy', 'name photo country language'),
+        req.query
+    ).filter()
+
+    let podcastsData = new ApiFeatures(
+        Podcast.find({
+            createdBy: {
+                $in: followingIds,
+            },
+        }).populate('createdBy', 'name photo country language'),
+        req.query
+    )
+        .filter()
+        .sort()
+        .limitFields()
+        .paginate()
+
+    podcastsData = JSON.parse(JSON.stringify(await podcastsData.query))
+
+    const docs = podcastsData.length
+    const page = req.query.page || 1
+    const limit = req.query.limit || 10
+    const remainingDocs =
+        docs !== 0 && docs == limit
+            ? (await Podcast.countDocuments(allPodcastsData.query)) -
+              docs * page
+            : 0
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: podcastsData,
+        docs,
+        remainingDocs,
+    })
+})
+
 const searchPodcast = catchAsync(async (req, res, next) => {
     const { s } = req.query
     if (!s) {
@@ -299,6 +353,7 @@ module.exports = {
     updatePodcast,
     deletePodcast,
     getMyPodcasts,
+    getMyFollowingPodcasts,
     searchPodcast,
     generateSignature,
 }
