@@ -11,6 +11,7 @@ const compression = require('compression')
 const AppError = require('./utils/appError')
 const globalErrorHandler = require('./controllers/errorController')
 const userRouter = require('./routes/userRoutes')
+const eventRouter = require('./routes/eventRoute')
 const podcastRouter = require('./routes/podcastRoutes')
 const categoryRouter = require('./routes/categoryRoutes')
 
@@ -62,6 +63,7 @@ app.use(compression())
 
 // Mounting routers
 app.use('/api/v1/users', userRouter)
+app.use('/api/v1/events', eventRouter)
 app.use('/api/v1/podcasts', podcastRouter)
 app.use('/api/v1/categories', categoryRouter)
 
