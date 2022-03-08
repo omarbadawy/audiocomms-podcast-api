@@ -142,9 +142,32 @@ const removeLike = catchAsync(async (req, res, next) => {
     }
 })
 
+const removeLikeByPodcastId = catchAsync(async (req, res, next) => {
+    try {
+        const { id: podcastId } = req.params
+
+        const data = await Likes.findOneAndRemove({
+            podcastId,
+        })
+
+        if (!data) {
+            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
+        }
+        await Podcast.updateOne({ _id: podcastId }, { $inc: { likes: -1 } })
+
+        res.status(StatusCodes.OK).json({
+            status: 'success',
+            message: 'Like is removed',
+        })
+    } catch (error) {
+        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    }
+})
+
 module.exports = {
     getMyLikes,
     addLike,
     removeLike,
     getPodcastLikes,
+    removeLikeByPodcastId,
 }

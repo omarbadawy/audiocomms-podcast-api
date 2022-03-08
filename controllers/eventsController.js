@@ -6,6 +6,36 @@ const AppError = require('../utils/appError')
 const { StatusCodes } = require('http-status-codes')
 
 const getAllEvents = catchAsync(async (req, res, next) => {
+    const allEventsData = new ApiFeatures(
+        Event.find({
+            createdBy: {
+                $in: followingIds,
+            },
+        }).populate('createdBy', 'name photo country language'),
+        req.query
+    ).filter()
+
+    let eventsData = new ApiFeatures(
+        Event.find({}).populate('createdBy', 'name photo country language'),
+        req.query
+    )
+        .filter()
+        .sort()
+        .limitFields()
+        .paginate()
+
+    eventsData = JSON.parse(JSON.stringify(await eventsData.query))
+
+    const docsCount = await Event.countDocuments(allEventsData.query)
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: eventsData,
+        docsCount,
+    })
+})
+
+const getAllFollowingEvents = catchAsync(async (req, res, next) => {
     const { id: userId } = req.user
 
     let followingData = await Follow.find({ follower: userId }).select(
@@ -169,27 +199,32 @@ const deleteEvent = catchAsync(async (req, res, next) => {
     }
 })
 
-// const searchEvent = catchAsync(async (req, res, next) => {
-//     const { s } = req.query
-//     if (!s) {
-//         return next(
-//             new AppError('Please, check search param', StatusCodes.BAD_REQUEST)
-//         )
-//     }
-//     const data = await Event.find({ $text: { $search: s } }, '-score', {
-//         score: { $meta: 'textScore' },
-//     })
-//         .populate('createdBy', 'name photo country language')
-//         .sort({ score: { $meta: 'textScore' } })
-//         .limit(10)
-//     res.status(StatusCodes.OK).json({ status: 'success', data })
-// })
+const deleteEventById = catchAsync(async (req, res, next) => {
+    try {
+        const { id: eventId } = req.params
+        const data = await Event.findOneAndRemove({
+            _id: eventId,
+        })
+
+        if (!data) {
+            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
+        }
+
+        res.status(StatusCodes.OK).json({
+            status: 'success',
+            message: 'Event is removed',
+        })
+    } catch (error) {
+        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    }
+})
 
 module.exports = {
     getAllEvents,
     getEvent,
     createEvent,
     deleteEvent,
-    // searchEvent,
+    deleteEventById,
     updateEvent,
+    getAllFollowingEvents,
 }

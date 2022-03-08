@@ -3,7 +3,7 @@ const express = require('express')
 const likesRouter = require('./likesRoute')
 
 const router = express.Router()
-const { protect } = require('../controllers/authController')
+const { protect, restrictTo } = require('../controllers/authController')
 
 const {
     getAllPodcasts,
@@ -11,6 +11,7 @@ const {
     createPodcast,
     updatePodcast,
     deletePodcast,
+    deletePodcastById,
     getMyPodcasts,
     getMyFollowingPodcasts,
     searchPodcast,
@@ -33,6 +34,8 @@ router.get('/:id', getPodcast)
 router.post('/', uploadPodcast, createPodcast)
 router.patch('/:id', updatePodcast)
 router.delete('/:id', deletePodcast)
+
+router.delete('/admin/:id', restrictTo('admin'), deletePodcastById)
 
 router.use('/likes', likesRouter)
 
