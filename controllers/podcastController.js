@@ -9,10 +9,7 @@ const { uploader, createImageUpload } = require('../utils/cloudinary')
 const ApiFeatures = require('../utils/apiFeatures')
 
 const getAllPodcasts = catchAsync(async (req, res, next) => {
-    const allData = new ApiFeatures(
-        Podcast.find({}).populate('podcastId'),
-        req.query
-    ).filter()
+    const allData = new ApiFeatures(Podcast.find({}), req.query).filter()
 
     const data = new ApiFeatures(
         Podcast.find({}).populate('createdBy', 'name photo country language'),
@@ -30,7 +27,7 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
     podcastsData.forEach((podcast) => podcastsId.push(podcast._id))
 
     let podcastsLike = await Likes.find({
-        podcastId: {
+        podcast: {
             $in: podcastsId,
         },
     })
@@ -59,7 +56,7 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
 const getMyPodcasts = catchAsync(async (req, res, next) => {
     const { id: userId } = req.user
     const allData = new ApiFeatures(
-        Podcast.find({ createdBy: userId }).populate('podcastId'),
+        Podcast.find({ createdBy: userId }),
         req.query
     ).filter()
 
@@ -82,7 +79,7 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
     podcastsData.forEach((podcast) => podcastsId.push(podcast._id))
 
     let podcastsLike = await Likes.find({
-        podcastId: {
+        podcast: {
             $in: podcastsId,
         },
     })
@@ -122,8 +119,8 @@ const getPodcast = catchAsync(async (req, res, next) => {
         }
 
         const userLike = await Likes.findOne({
-            likeTo: podcastId,
-            likeBy: userId,
+            podcast: podcastId,
+            user: userId,
         })
 
         data = JSON.parse(JSON.stringify(data))

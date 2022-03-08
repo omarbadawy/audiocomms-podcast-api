@@ -7,11 +7,7 @@ const { StatusCodes } = require('http-status-codes')
 
 const getAllEvents = catchAsync(async (req, res, next) => {
     const allEventsData = new ApiFeatures(
-        Event.find({
-            createdBy: {
-                $in: followingIds,
-            },
-        }).populate('createdBy', 'name photo country language'),
+        Event.find({}).populate('createdBy', 'name photo country language'),
         req.query
     ).filter()
 
