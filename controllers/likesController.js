@@ -5,15 +5,34 @@ const ApiFeatures = require('../utils/apiFeatures')
 const AppError = require('../utils/appError')
 const { StatusCodes } = require('http-status-codes')
 
+const getAllLikes = catchAsync(async (req, res, next) => {
+    const allData = new ApiFeatures(Likes.find({}), req.query).filter()
+
+    const data = new ApiFeatures(Likes.find({}).populate('podcast'), req.query)
+        .filter()
+        .sort()
+        .limitFields()
+        .paginate()
+    const query = await data.query
+
+    const docsCount = await Likes.countDocuments(allData.query)
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: query,
+        docsCount,
+    })
+})
+
 const getMyLikes = catchAsync(async (req, res, next) => {
     const { id: userId } = req.user
     const allData = new ApiFeatures(
-        Likes.find({ userId }).populate('podcastId'),
+        Likes.find({ user: userId }).populate('podcast'),
         req.query
     ).filter()
 
     const data = new ApiFeatures(
-        Likes.find({ userId }).populate('podcastId'),
+        Likes.find({ user: userId }).populate('podcast'),
         req.query
     )
         .filter()
@@ -45,13 +64,13 @@ const getPodcastLikes = catchAsync(async (req, res, next) => {
         }
 
         const allData = new ApiFeatures(
-            Likes.find({ podcastId }).populate('podcastId'),
+            Likes.find({ podcast: podcastId }).populate('podcast'),
             req.query
         ).filter()
 
         const data = new ApiFeatures(
-            Likes.find({ podcastId }).populate(
-                'userId',
+            Likes.find({ podcast: podcastId }).populate(
+                'user',
                 'name photo country language'
             ),
             req.query
@@ -88,8 +107,8 @@ const addLike = catchAsync(async (req, res, next) => {
         }
 
         const oldData = await Likes.findOne({
-            podcastId,
-            userId,
+            podcast: podcastId,
+            user: userId,
         })
 
         if (oldData) {
@@ -102,8 +121,8 @@ const addLike = catchAsync(async (req, res, next) => {
         }
 
         const data = await Likes.create({
-            podcastId,
-            userId,
+            podcast: podcastId,
+            user: userId,
         })
 
         if (data) {
@@ -124,8 +143,8 @@ const removeLike = catchAsync(async (req, res, next) => {
         const { id: userId } = req.user
 
         const data = await Likes.findOneAndRemove({
-            podcastId,
-            userId,
+            podcast: podcastId,
+            user: userId,
         })
 
         if (!data) {
@@ -147,7 +166,7 @@ const removeLikeByPodcastId = catchAsync(async (req, res, next) => {
         const { id: podcastId } = req.params
 
         const data = await Likes.findOneAndRemove({
-            podcastId,
+            podcast: podcastId,
         })
 
         if (!data) {
@@ -165,6 +184,7 @@ const removeLikeByPodcastId = catchAsync(async (req, res, next) => {
 })
 
 module.exports = {
+    getAllLikes,
     getMyLikes,
     addLike,
     removeLike,
