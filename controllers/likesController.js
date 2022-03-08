@@ -8,7 +8,10 @@ const { StatusCodes } = require('http-status-codes')
 const getAllLikes = catchAsync(async (req, res, next) => {
     const allData = new ApiFeatures(Likes.find({}), req.query).filter()
 
-    const data = new ApiFeatures(Likes.find({}).populate('podcast'), req.query)
+    const data = new ApiFeatures(
+        Likes.find({}).populate('podcast').populate('user'),
+        req.query
+    )
         .filter()
         .sort()
         .limitFields()
@@ -27,7 +30,7 @@ const getAllLikes = catchAsync(async (req, res, next) => {
 const getMyLikes = catchAsync(async (req, res, next) => {
     const { id: userId } = req.user
     const allData = new ApiFeatures(
-        Likes.find({ user: userId }).populate('podcast'),
+        Likes.find({ user: userId }),
         req.query
     ).filter()
 
