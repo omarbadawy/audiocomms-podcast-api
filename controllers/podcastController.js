@@ -252,6 +252,30 @@ const deletePodcast = catchAsync(async (req, res, next) => {
     }
 })
 
+const deletePodcastById = catchAsync(async (req, res, next) => {
+    try {
+        const { id: PodcastId } = req.params
+        const data = await Podcast.findOneAndRemove({
+            _id: PodcastId,
+        })
+
+        if (!data) {
+            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
+        }
+
+        await uploader.destroy(data.audio.publicID, {
+            resource_type: 'video',
+        })
+
+        res.status(StatusCodes.OK).json({
+            status: 'success',
+            message: 'Podcast is deleted',
+        })
+    } catch (error) {
+        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    }
+})
+
 const getMyFollowingPodcasts = catchAsync(async (req, res, next) => {
     const { id: userId } = req.user
 
@@ -329,6 +353,7 @@ module.exports = {
     createPodcast,
     updatePodcast,
     deletePodcast,
+    deletePodcastById,
     getMyPodcasts,
     getMyFollowingPodcasts,
     searchPodcast,
