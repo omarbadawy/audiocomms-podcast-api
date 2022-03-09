@@ -1,7 +1,10 @@
 const mongoose = require('mongoose')
 const dotenv = require('dotenv')
 const http = require('http')
+const User = require('./models/userModel')
 const { Server } = require('socket.io')
+const { promisify } = require('util')
+const jwt = require('jsonwebtoken')
 const { cloudinaryConfig } = require('./utils/cloudinary')
 
 process.on('uncaughtException', (err) => {
@@ -33,7 +36,16 @@ cloudinaryConfig()
 
 const port = process.env.PORT || 3000
 
+io.use(async (socket, next) => {
+    const token = socket.handshake.auth.token
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET)
+    const user = await User.findById(decoded.id)
+    socket.user = user
+    next()
+})
+
 io.on('connection', (socket) => {
+    console.log(socket.user)
     console.log('client connected: ' + socket.id)
     socket.on('chat message', (msg) => {
         io.emit('chat message', msg)
