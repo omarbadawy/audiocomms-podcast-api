@@ -1,6 +1,8 @@
 const AppError = require('../utils/appError')
 const User = require('../models/userModel')
 const Follow = require('../models/followModel')
+const Like = require('../models/likesModel')
+const Podcast = require('../models/podcastModel')
 const APIFeatures = require('../utils/apiFeatures')
 const catchAsync = require('../utils/catchAsync')
 const factory = require('./handlerFactory')
@@ -169,6 +171,8 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
 
     await Follow.deleteMany({ follower: req.user.id })
     await Follow.deleteMany({ following: req.user.id })
+    await Like.deleteMany({ user: req.user.id })
+    await Podcast.deleteMany({ createdBy: req.user.id })
 
     res.status(204).json({
         status: 'success',
@@ -231,8 +235,10 @@ exports.deleteUser = catchAsync(async (req, res, next) => {
         return next(new AppError('No document Found With That ID', 404))
     }
 
-    await Follow.deleteMany({ follower: req.user.id })
-    await Follow.deleteMany({ following: req.user.id })
+    await Follow.deleteMany({ follower: req.params.id })
+    await Follow.deleteMany({ following: req.params.id })
+    await Like.deleteMany({ user: req.params.id })
+    await Podcast.deleteMany({ createdBy: req.params.id })
 
     res.status(204).json({
         status: 'success',
