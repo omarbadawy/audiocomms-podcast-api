@@ -38,6 +38,7 @@ exports.getUserFollowers = catchAsync(async (req, res, next) => {
     res.status(StatusCodes.OK).json({
         status: 'success',
         docsCount,
+        results: following.length,
         data: following,
     })
 })
@@ -57,7 +58,7 @@ exports.getUserFollowing = catchAsync(async (req, res, next) => {
         .limitFields()
         .paginate()
 
-    let following = await features.query
+    let follower = await features.query
         .select('-follower')
         .populate({
             path: 'following',
@@ -69,12 +70,13 @@ exports.getUserFollowing = catchAsync(async (req, res, next) => {
         featuresBeforePagination.query
     )
 
-    await User.updateOne({ _id: req.params.id }, { following: docsCount })
+    await User.updateOne({ _id: req.params.id }, { follower: docsCount })
 
     res.status(StatusCodes.OK).json({
         status: 'success',
         docsCount,
-        data: following,
+        results: follower.length,
+        data: follower,
     })
 })
 
