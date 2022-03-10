@@ -14,6 +14,7 @@ const userRouter = require('./routes/userRoutes')
 const eventRouter = require('./routes/eventRoute')
 const podcastRouter = require('./routes/podcastRoutes')
 const categoryRouter = require('./routes/categoryRoutes')
+const roomRouter = require('./routes/roomRoutes')
 
 const app = express()
 
@@ -66,6 +67,7 @@ app.use('/api/v1/users', userRouter)
 app.use('/api/v1/events', eventRouter)
 app.use('/api/v1/podcasts', podcastRouter)
 app.use('/api/v1/categories', categoryRouter)
+app.use('/api/v1/rooms', roomRouter)
 
 app.get('/', (req, res) => {
     res.status(404).json({
