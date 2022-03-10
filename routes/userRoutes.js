@@ -37,6 +37,8 @@ router.post('/login', login)
 router.post('/forgotPassword', forgotPassword)
 router.patch('/resetPassword/:token', resetPassword)
 
+router.patch('/updateMe', multerUploads, protect, updateMe)
+
 // Protect all the routes after this
 router.use(protect)
 
@@ -57,7 +59,6 @@ router
 router.get('/:id/followers', getUserFollowers)
 
 router.delete('/deleteMe', deleteMe)
-router.patch('/updateMe', multerUploads, updateMe)
 
 // Restrict all the routes to admin after this
 router.use(restrictTo('admin'))
