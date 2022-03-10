@@ -83,7 +83,6 @@ io.on('connection', (socket) => {
     // console.log(socket.user)
     console.log('client connected: ' + socket.id)
     socket.user.socketId = socket.id
-
     socket.on('joinRoom', async (roomData) => {
         const userRooms = Array.from(socket.rooms)
         if (userRooms.length > 1) {
@@ -93,10 +92,30 @@ io.on('connection', (socket) => {
 
         if (roomData?._id) {
             const existingRoom = await Room.findById(roomData._id)
+
+            if (!existingRoom) {
+                io.to(socket.id).emit('roomNotFound')
+                return
+            }
+
+            if (existingRoom.admin.toString() === socket.user.id.toString()) {
+                let isTheAdminInRoom = await io
+                    .in(existingRoom.name)
+                    .fetchSockets()
+
+                if (isTheAdminInRoom.length > 0) {
+                    io.to(socket.id).emit('adminAlreadyInRoom')
+                    return
+                }
+
+                socket.join(existingRoom.name)
+                socket.user.roomName = existingRoom.name
+
+                return
+            }
             if (
-                existingRoom.admin.toString() === socket.user.id.toString() ||
-                existingRoom.audience.contains(socket.user.id.toString()) ||
-                existingRoom.brodcasters.contains(socket.user.id.toString())
+                existingRoom.audience.includes(socket.user.id.toString()) ||
+                existingRoom.brodcasters.includes(socket.user.id.toString())
             ) {
                 io.to(socket.id).emit('triedToJoinRoomTwice')
                 return
@@ -113,18 +132,25 @@ io.on('connection', (socket) => {
                 }
             )
 
-            if (!room) {
-                io.to(socket.id).emit('roomNotFound')
-                return
-            }
-
+            socket.user.roomName = room.name
             socket.join(room.name)
 
             socket.to(room.name).emit('userJoined', socket.user)
         }
     })
 
-    socket.on('disconnecting', () => {
+    socket.on('disconnecting', async () => {
+        const existingRoom = await Room.findOne({ name: socket.user.roomName })
+        if (existingRoom) {
+            if (socket.user.id.toString() === existingRoom.admin.toString()) {
+                io.in(socket.user.roomName).disconnectSockets(true)
+                try {
+                    await Room.findOneAndDelete({ name: socket.user.roomName })
+                } catch (err) {
+                    console.log(err)
+                }
+            }
+        }
         console.log(socket.user) // the Set contains at least the socket ID
     })
 })
