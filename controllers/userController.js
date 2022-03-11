@@ -221,6 +221,22 @@ exports.getUnfollowedUsers = catchAsync(async (req, res, next) => {
     })
 })
 
+exports.searchUser = catchAsync(async (req, res, next) => {
+    const { s } = req.query
+    if (!s) {
+        return next(
+            new AppError('Please, check search param', StatusCodes.BAD_REQUEST)
+        )
+    }
+    const data = await User.find({ $text: { $search: s } }, '-score', {
+        score: { $meta: 'textScore' },
+    })
+        .select('-active -role -passwordChangedAt')
+        .sort({ score: { $meta: 'textScore' } })
+        .limit(10)
+    res.status(StatusCodes.OK).json({ status: 'success', data })
+})
+
 exports.getAllFullUsers = factory.getAll(User, true)
 
 exports.getFullUser = factory.getOne(User, true)

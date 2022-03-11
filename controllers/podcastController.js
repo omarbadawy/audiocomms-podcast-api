@@ -36,7 +36,7 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
 
     for (let podcast of podcastsData) {
         for (let item of podcastsLike) {
-            if (podcast._id === item.podcastId) {
+            if (podcast._id === item.podcast) {
                 podcast.isLiked = true
                 break
             }

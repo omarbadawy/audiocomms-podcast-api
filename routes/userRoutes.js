@@ -21,6 +21,7 @@ const {
     updateUser,
     updateMe,
     getUnfollowedUsers,
+    searchUser,
 } = require('../controllers/userController')
 
 const {
@@ -41,6 +42,7 @@ router.patch('/updateMe', multerUploads, protect, updateMe)
 
 // Protect all the routes after this
 router.use(protect)
+router.get('/search', searchUser)
 
 router.patch('/updateMyPassword', updatePassword)
 

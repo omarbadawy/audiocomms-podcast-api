@@ -120,6 +120,8 @@ const userSchema = new mongoose.Schema(
     { timestamps: true }
 )
 
+userSchema.index({ name: 'text' }, { language_override: 'none' })
+
 // hashing and salting the password BEFORE saving it to the DB
 userSchema.pre('save', async function (next) {
     // only run this function if password was modified or created

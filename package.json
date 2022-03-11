@@ -16,6 +16,7 @@
     "license": "ISC",
     "dependencies": {
         "@sendgrid/mail": "^7.4.6",
+        "agora-access-token": "^2.0.4",
         "bcryptjs": "^2.4.3",
         "cloudinary": "^1.26.3",
         "compression": "^1.7.4",
