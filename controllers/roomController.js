@@ -3,6 +3,7 @@ const APIFeatures = require('../utils/apiFeatures')
 const catchAsync = require('../utils/catchAsync')
 const User = require('../models/userModel')
 const Room = require('../models/roomModel')
+const factory = require('./handlerFactory')
 const { StatusCodes } = require('http-status-codes')
 const Category = require('../models/categoryModel')
 
@@ -10,6 +11,9 @@ exports.getAllRooms = catchAsync(async (req, res, next) => {
     if (req.query.status) {
         req.query.status = 'public'
     }
+
+    req.query.isActivated = false
+
     const featuresBeforePagination = new APIFeatures(
         Room.find({ status: 'public' }),
         req.query
@@ -73,3 +77,5 @@ exports.createRoom = catchAsync(async (req, res, next) => {
         room,
     })
 })
+
+exports.getRoom = factory.getOne(Room)

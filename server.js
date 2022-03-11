@@ -98,17 +98,18 @@ io.on('connection', (socket) => {
                 return
             }
 
+            console.log('socket user id', socket.user.id)
             if (existingRoom.admin.toString() === socket.user.id.toString()) {
-                let isTheAdminInRoom = await io
-                    .in(existingRoom.name)
-                    .fetchSockets()
-
-                if (isTheAdminInRoom.length > 0) {
+                if (existingRoom.isActivated) {
                     io.to(socket.id).emit('adminAlreadyInRoom')
                     return
                 }
 
                 socket.join(existingRoom.name)
+                await Room.updateOne(
+                    { _id: existingRoom._id },
+                    { isActivated: true }
+                )
                 socket.user.roomName = existingRoom.name
 
                 return
@@ -143,6 +144,7 @@ io.on('connection', (socket) => {
         const existingRoom = await Room.findOne({ name: socket.user.roomName })
         if (existingRoom) {
             if (socket.user.id.toString() === existingRoom.admin.toString()) {
+                io.to(existingRoom.name).emit('adminLeft')
                 io.in(socket.user.roomName).disconnectSockets(true)
                 try {
                     await Room.findOneAndDelete({ name: socket.user.roomName })
@@ -150,6 +152,16 @@ io.on('connection', (socket) => {
                     console.log(err)
                 }
             }
+            io.to(existingRoom.name).emit('userLeft', socket.user)
+            await Room.updateOne(
+                { _id: existingRoom._id },
+                {
+                    $pull: {
+                        audience: socket.user.id,
+                        brodcasters: socket.user.id,
+                    },
+                }
+            )
         }
         console.log(socket.user) // the Set contains at least the socket ID
     })
