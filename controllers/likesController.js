@@ -86,6 +86,8 @@ const getPodcastLikes = catchAsync(async (req, res, next) => {
 
         const docsCount = await Podcast.countDocuments(allData.query)
 
+        await Podcast.updateOne({ _id: podcastId }, { likes: docsCount })
+
         res.status(StatusCodes.OK).json({
             status: 'success',
             data: query,
