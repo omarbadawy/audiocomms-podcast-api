@@ -28,9 +28,14 @@ const roomSchema = new mongoose.Schema(
             lowercase: true,
             enum: ['private', 'public'],
         },
+        isActivated: {
+            type: Boolean,
+            default: false,
+        },
     },
     { timestamps: true }
 )
 
+roomSchema.index({ createdAt: 1 }, { expireAfterSeconds: 18000 })
 roomSchema.index({ name: 'text' })
 module.exports = mongoose.model('Room', roomSchema)
