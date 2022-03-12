@@ -27,6 +27,7 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
     podcastsData.forEach((podcast) => podcastsId.push(podcast._id))
 
     let podcastsLike = await Likes.find({
+        user: req.user.id,
         podcast: {
             $in: podcastsId,
         },
