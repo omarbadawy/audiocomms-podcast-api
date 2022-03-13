@@ -36,12 +36,12 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
     podcastsLike = JSON.parse(JSON.stringify(podcastsLike))
 
     for (let podcast of podcastsData) {
+        podcast.isLiked = false
         for (let item of podcastsLike) {
             if (podcast._id === item.podcast) {
                 podcast.isLiked = true
                 break
             }
-            podcast.isLiked = false
         }
     }
 
@@ -89,12 +89,12 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
     podcastsLike = JSON.parse(JSON.stringify(podcastsLike))
 
     for (let podcast of podcastsData) {
+        podcast.isLiked = false
         for (let item of podcastsLike) {
             if (podcast._id === item.podcastId) {
                 podcast.isLiked = true
                 break
             }
-            podcast.isLiked = false
         }
     }
 
