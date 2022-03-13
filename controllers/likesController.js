@@ -44,7 +44,7 @@ const getMyLikes = catchAsync(async (req, res, next) => {
         .paginate()
     const query = await data.query
 
-    const docsCount = await Podcast.countDocuments(allData.query)
+    const docsCount = await Likes.countDocuments(allData.query)
 
     res.status(StatusCodes.OK).json({
         status: 'success',
@@ -67,7 +67,10 @@ const getPodcastLikes = catchAsync(async (req, res, next) => {
         }
 
         const allData = new ApiFeatures(
-            Likes.find({ podcast: podcastId }).populate('podcast'),
+            Likes.find({ podcast: podcastId }).populate(
+                'user',
+                'name photo country language'
+            ),
             req.query
         ).filter()
 
@@ -84,7 +87,7 @@ const getPodcastLikes = catchAsync(async (req, res, next) => {
             .paginate()
         const query = await data.query
 
-        const docsCount = await Podcast.countDocuments(allData.query)
+        const docsCount = await Likes.countDocuments(allData.query)
 
         await Podcast.updateOne({ _id: podcastId }, { likes: docsCount })
 
