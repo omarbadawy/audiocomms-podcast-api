@@ -49,6 +49,7 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
 
     res.status(StatusCodes.OK).json({
         status: 'success',
+        results: podcastsData.length,
         data: podcastsData,
         docsCount,
     })
@@ -101,6 +102,7 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
 
     res.status(StatusCodes.OK).json({
         status: 'success',
+        results: podcastsData.length,
         data: podcastsData,
         docsCount,
     })
