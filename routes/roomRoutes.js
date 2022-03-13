@@ -6,8 +6,9 @@ const {
     getRoom,
     generateAgoraToken,
     searchRoom,
+    deleteRoom,
 } = require('../controllers/roomController')
-const { protect } = require('../controllers/authController')
+const { protect, restrictTo } = require('../controllers/authController')
 
 const router = express.Router()
 
@@ -17,5 +18,8 @@ router.route('/').get(getAllRooms).post(createRoom)
 router.get('/generateToken', generateAgoraToken)
 router.get('/search', searchRoom)
 router.get('/:id', getRoom)
+
+router.use(restrictTo('admin'))
+router.delete('/:id', deleteRoom)
 
 module.exports = router

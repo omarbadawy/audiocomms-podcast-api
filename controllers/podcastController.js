@@ -49,6 +49,7 @@ const getAllPodcasts = catchAsync(async (req, res, next) => {
 
     res.status(StatusCodes.OK).json({
         status: 'success',
+        results: podcastsData.length,
         data: podcastsData,
         docsCount,
     })
@@ -101,6 +102,7 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
 
     res.status(StatusCodes.OK).json({
         status: 'success',
+        results: podcastsData.length,
         data: podcastsData,
         docsCount,
     })
@@ -237,6 +239,8 @@ const deletePodcast = catchAsync(async (req, res, next) => {
             return next(new AppError('Not found', StatusCodes.NOT_FOUND))
         }
 
+        await Likes.deleteMany({ podcast: PodcastId })
+
         await uploader.destroy(data.audio.publicID, {
             resource_type: 'video',
         })
@@ -260,6 +264,8 @@ const deletePodcastById = catchAsync(async (req, res, next) => {
         if (!data) {
             return next(new AppError('Not found', StatusCodes.NOT_FOUND))
         }
+
+        await Likes.deleteMany({ podcast: PodcastId })
 
         await uploader.destroy(data.audio.publicID, {
             resource_type: 'video',
@@ -314,6 +320,7 @@ const getMyFollowingPodcasts = catchAsync(async (req, res, next) => {
 
     res.status(StatusCodes.OK).json({
         status: 'success',
+        results: podcastsData.length,
         data: podcastsData,
         docsCount,
     })
@@ -332,7 +339,11 @@ const searchPodcast = catchAsync(async (req, res, next) => {
         .populate('createdBy', 'name photo country language')
         .sort({ score: { $meta: 'textScore' } })
         .limit(10)
-    res.status(StatusCodes.OK).json({ status: 'success', data })
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        results: data.length,
+        data,
+    })
 })
 
 const generateSignature = catchAsync(async (req, res, next) => {

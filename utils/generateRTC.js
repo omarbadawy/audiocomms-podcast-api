@@ -1,7 +1,7 @@
 const Agora = require('agora-access-token')
 
 module.exports = (channel, isPublisher) => {
-    const expiredTimeInSeconds = 3600
+    const expiredTimeInSeconds = 18000
     const privilegeExpiredTs =
         Math.floor(Date.now() / 1000) + expiredTimeInSeconds
 
@@ -14,7 +14,7 @@ module.exports = (channel, isPublisher) => {
             process.env.APP_ID,
             process.env.APP_CERTIFICATE,
             channel,
-            null,
+            0,
             userRole,
             privilegeExpiredTs
         )
