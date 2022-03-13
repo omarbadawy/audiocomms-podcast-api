@@ -80,6 +80,15 @@ exports.socketIOHandler = function (io) {
 
                     socket.join(existingRoom.name)
                     io.to(socket.id).emit('joinRoomSuccess', socket.user)
+                    // setting id of timer to the admin socket
+                    socket.timerId = setTimeout(async () => {
+                        const sockets = await io
+                            .in(existingRoom.name)
+                            .fetchSockets()
+                        if (sockets.length > 0) {
+                            io.to(existingRoom.name).emit('roomEnded')
+                        }
+                    }, 18000000)
                     await Room.updateOne(
                         { _id: existingRoom._id },
                         { isActivated: true }
@@ -296,6 +305,7 @@ exports.socketIOHandler = function (io) {
                     socket.user.id.toString() === existingRoom.admin.toString()
                 ) {
                     io.to(existingRoom.name).emit('adminLeft')
+                    clearTimeout(socket.timerId)
                     io.in(socket.user.roomName).disconnectSockets(true)
                     try {
                         await Room.findOneAndDelete({
