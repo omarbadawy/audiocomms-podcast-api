@@ -54,7 +54,7 @@ exports.socketIOHandler = function (io) {
         socket.on('joinRoom', async (roomData) => {
             const userRooms = Array.from(socket.rooms)
             if (userRooms.length > 1) {
-                io.to(socket.id).emit('alreadyInRoom')
+                io.to(socket.id).emit('errorMessage', 'already in room')
                 return
             }
 
@@ -62,7 +62,7 @@ exports.socketIOHandler = function (io) {
                 const existingRoom = await Room.findById(roomData._id)
 
                 if (!existingRoom) {
-                    io.to(socket.id).emit('roomNotFound')
+                    io.to(socket.id).emit('errorMessage', 'room not found')
                     return
                 }
 
@@ -71,7 +71,10 @@ exports.socketIOHandler = function (io) {
                     existingRoom.admin.toString() === socket.user.id.toString()
                 ) {
                     if (existingRoom.isActivated) {
-                        io.to(socket.id).emit('adminAlreadyInRoom')
+                        io.to(socket.id).emit(
+                            'errorMessage',
+                            'admin already in room'
+                        )
                         return
                     }
 
@@ -89,7 +92,10 @@ exports.socketIOHandler = function (io) {
                     existingRoom.audience.includes(socket.user.id.toString()) ||
                     existingRoom.brodcasters.includes(socket.user.id.toString())
                 ) {
-                    io.to(socket.id).emit('triedToJoinRoomTwice')
+                    io.to(socket.id).emit(
+                        'errorMessage',
+                        'tried to join toom twice'
+                    )
                     return
                 }
 
@@ -118,6 +124,7 @@ exports.socketIOHandler = function (io) {
                     .to(socket.user.roomName)
                     .emit('userAskedForPerms', socket.user)
             }
+            io.to(socket.id).emit('errorMessage', 'no room specified')
         })
 
         socket.on('givePermsTo', async (user) => {
@@ -129,6 +136,7 @@ exports.socketIOHandler = function (io) {
                 !user.roomName ||
                 !user.photo
             ) {
+                io.to(socket.id).emit('errorMessage', 'user info not complete')
                 return
             }
             // check if the emitter is the admin
@@ -139,10 +147,15 @@ exports.socketIOHandler = function (io) {
                 .lean()
 
             if (!admin) {
+                io.to(socket.id).emit('errorMessage', 'room not found')
                 return
             }
 
             if (!(admin.toString() === socket.user.id.toString())) {
+                io.to(socket.id).emit(
+                    'errorMessage',
+                    'you are not the room admin'
+                )
                 return
             }
 
@@ -150,6 +163,10 @@ exports.socketIOHandler = function (io) {
                 (aud) => aud.toString() === user.id.toString()
             )
             if (!foundInAudience) {
+                io.to(socket.id).emit(
+                    'errorMessage',
+                    'user not in audience list'
+                )
                 return
             }
 
@@ -179,7 +196,10 @@ exports.socketIOHandler = function (io) {
                     brodcasters: socket.user.id,
                 })
 
-                if (!room) return
+                if (!room) {
+                    io.to(socket.id).emit('errorMessage', 'room not found')
+                    return
+                }
 
                 await Room.updateOne(
                     { name: socket.user.roomName },
@@ -213,6 +233,7 @@ exports.socketIOHandler = function (io) {
                 !user.roomName ||
                 !user.photo
             ) {
+                io.to(socket.id).emit('errorMessage', 'user info not complete')
                 return
             }
 
@@ -224,10 +245,15 @@ exports.socketIOHandler = function (io) {
                 .lean()
 
             if (!admin) {
+                io.to(socket.id).emit('errorMessage', 'room not found')
                 return
             }
 
             if (!(admin.toString() === socket.user.id.toString())) {
+                io.to(socket.id).emit(
+                    'errorMessage',
+                    'you are not the room admin'
+                )
                 return
             }
 
@@ -235,6 +261,10 @@ exports.socketIOHandler = function (io) {
                 (brod) => brod.toString() === user.id.toString()
             )
             if (!foundInBrodcasters) {
+                io.to(socket.id).emit(
+                    'errorMessage',
+                    'user is not in brodcasters list'
+                )
                 return
             }
 
