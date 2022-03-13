@@ -106,7 +106,7 @@ exports.searchRoom = catchAsync(async (req, res, next) => {
         )
     }
     const data = await Room.find(
-        { status: 'public', $text: { $search: s } },
+        { status: 'public', isActivated: false, $text: { $search: s } },
         '-score',
         {
             score: { $meta: 'textScore' },
@@ -130,3 +130,4 @@ exports.searchRoom = catchAsync(async (req, res, next) => {
 })
 
 exports.getRoom = factory.getOne(Room)
+exports.deleteRoom = factory.deleteOne(Room)
