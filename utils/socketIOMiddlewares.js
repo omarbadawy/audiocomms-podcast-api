@@ -87,6 +87,7 @@ exports.socketIOHandler = function (io) {
                             .fetchSockets()
                         if (sockets.length > 0) {
                             io.to(existingRoom.name).emit('roomEnded')
+                            io.in(existingRoom.name).disconnectSockets(true)
                         }
                     }, 18000000)
                     await Room.updateOne(
