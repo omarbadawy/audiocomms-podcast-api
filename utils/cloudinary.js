@@ -13,8 +13,7 @@ const createImageUpload = async () => {
     const signature = utils.api_sign_request(
         {
             timestamp,
-            folder: 'potcasts',
-            eager: 'c_pad,h_300,w_400|c_crop,h_200,w_260',
+            folder: 'podcasts',
         },
         process.env.CLOUD_API_SECRET
     )
