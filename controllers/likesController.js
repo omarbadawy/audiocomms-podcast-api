@@ -54,7 +54,7 @@ const getMyLikes = catchAsync(async (req, res, next) => {
 })
 const getPodcastLikes = catchAsync(async (req, res, next) => {
     try {
-        // const { id: userId } = req.user
+        const { id: userId } = req.user
         const { id: podcastId } = req.params
 
         if (!podcastId) {
@@ -85,6 +85,7 @@ const getPodcastLikes = catchAsync(async (req, res, next) => {
             .sort()
             .limitFields()
             .paginate()
+
         const query = await data.query
 
         const docsCount = await Likes.countDocuments(allData.query)
