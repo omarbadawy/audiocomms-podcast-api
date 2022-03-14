@@ -160,6 +160,20 @@ const createPodcast = catchAsync(async (req, res, next) => {
             )
         )
     }
+
+    if (
+        !audio.secure_url.startsWith(
+            `https://res.cloudinary.com/${process.env.CLOUD_NAME}`
+        ) ||
+        !audio.public_id.startsWith('potcasts')
+    ) {
+        return next(
+            new AppError(
+                'Invaild cloudinary url or public_id',
+                StatusCodes.BAD_REQUEST
+            )
+        )
+    }
     req.body.audio = undefined
 
     if (category) {
