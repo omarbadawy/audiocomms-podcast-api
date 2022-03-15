@@ -165,7 +165,7 @@ const createPodcast = catchAsync(async (req, res, next) => {
         !audio.secure_url.startsWith(
             `https://res.cloudinary.com/${process.env.CLOUD_NAME}`
         ) ||
-        !audio.public_id.startsWith('potcasts')
+        !audio.public_id.startsWith('podcasts')
     ) {
         return next(
             new AppError(
