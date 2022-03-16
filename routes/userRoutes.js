@@ -43,6 +43,7 @@ router.patch('/updateMe', multerUploads, protect, updateMe)
 // Protect all the routes after this
 router.use(protect)
 router.get('/search', searchUser)
+router.get('/admin/', restrictTo('admin'), getAllFullUsers)
 
 router.patch('/updateMyPassword', updatePassword)
 
@@ -65,7 +66,6 @@ router.delete('/deleteMe', deleteMe)
 // Restrict all the routes to admin after this
 router.use(restrictTo('admin'))
 
-router.route('/admin/').get(getAllFullUsers)
 router.route('/admin/:id').get(getFullUser).patch(updateUser).delete(deleteUser)
 
 module.exports = router
