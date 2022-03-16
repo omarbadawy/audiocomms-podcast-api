@@ -18,8 +18,6 @@ const {
     generateSignature,
 } = require('../controllers/podcastController')
 
-const { uploadPodcast } = require('../utils/multer')
-
 router.use(protect)
 
 router.get('/', getAllPodcasts)
@@ -31,7 +29,7 @@ router.get('/generateSignature', generateSignature)
 
 router.get('/:id', getPodcast)
 
-router.post('/', uploadPodcast, createPodcast)
+router.post('/', createPodcast)
 router.patch('/:id', updatePodcast)
 router.delete('/:id', deletePodcast)
 

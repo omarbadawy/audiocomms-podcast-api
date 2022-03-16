@@ -10,7 +10,12 @@ const multerFilter = (req, file, cb) => {
     if (file.mimetype.startsWith('image')) {
         cb(null, true)
     } else {
-        cb(new AppError('Not an image, Please upload only images', 400))
+        cb(
+            new AppError(
+                'Not an image, Please upload only images',
+                StatusCodes.BAD_REQUEST
+            )
+        )
     }
 }
 
@@ -30,25 +35,7 @@ const dUri = new DataURIParser()
 const dataUri = (req) =>
     dUri.format(path.extname(req.file.originalname).toString(), req.file.buffer)
 
-const uploadPodcast = multer({
-    storage,
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('audio')) {
-            cb(null, true)
-        } else {
-            cb(
-                new AppError(
-                    'Not an audio, Please upload only audios',
-                    StatusCodes.BAD_REQUEST
-                )
-            )
-        }
-    },
-    limits: { fileSize: 100 * 1024 * 1024 },
-}).single('audio')
-
 module.exports = {
     multerUploads,
-    uploadPodcast,
     dataUri,
 }
