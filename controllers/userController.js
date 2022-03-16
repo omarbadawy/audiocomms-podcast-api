@@ -8,6 +8,7 @@ const catchAsync = require('../utils/catchAsync')
 const factory = require('./handlerFactory')
 const { uploader } = require('../utils/cloudinary')
 const { StatusCodes } = require('http-status-codes')
+const { promisify } = require('util')
 
 const { Readable } = require('stream')
 const sharp = require('sharp')
@@ -109,34 +110,39 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     }
 
     if (req.file) {
-        const bufferToStream = (buffer) => {
-            const readable = new Readable({
-                read() {
-                    this.push(buffer)
-                    this.push(null)
-                },
+        const uploadImageToCloudinary = (req) => {
+            return new Promise(async (resolve, reject) => {
+                const bufferToStream = (buffer) => {
+                    const readable = new Readable({
+                        read() {
+                            this.push(buffer)
+                            this.push(null)
+                        },
+                    })
+                    return readable
+                }
+
+                const data = await sharp(req.file.buffer)
+                    .webp({ quality: 20 })
+                    .toBuffer()
+                const stream = uploader.upload_stream(
+                    { folder: 'userPhotos' },
+                    (error, result) => {
+                        if (error) reject(error)
+                        else {
+                            resolve(result)
+                        }
+                    }
+                )
+                bufferToStream(data).pipe(stream)
             })
-            return readable
         }
 
-        const data = await sharp(req.file.buffer)
-            .webp({ quality: 20 })
-            .toBuffer()
-        const stream = uploader.upload_stream(
-            { folder: 'userPhotos' },
-            (error, result) => {
-                if (error)
-                    return next(
-                        new AppError(error.message, StatusCodes.BAD_REQUEST)
-                    )
-                req.body.photo = result.secure_url
-            }
-        )
-        bufferToStream(data).pipe(stream)
+        const photoData = await uploadImageToCloudinary(req)
+        req.body.photo = photoData.secure_url
     }
 
     // filtered out unwanted feild names
-
     const filteredBody = filterObj(
         req.body,
         'name',
