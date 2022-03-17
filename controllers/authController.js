@@ -139,7 +139,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     // Send it back as an email
 
     try {
-        const resetURL = `https://change-later.app/reset-password?token=${resetToken}`
+        const resetURL = `https://arch-club.vercel.app/archclub/sign/reset-password.html?token=${resetToken}`
 
         await new Email(user, resetURL).sendPasswordReset()
 

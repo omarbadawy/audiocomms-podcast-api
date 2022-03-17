@@ -25,7 +25,7 @@ exports.getUserFollowers = catchAsync(async (req, res, next) => {
         .select('-following')
         .populate({
             path: 'follower',
-            select: 'name photo',
+            select: 'name photo followers following',
         })
         .lean()
 
@@ -62,7 +62,7 @@ exports.getUserFollowing = catchAsync(async (req, res, next) => {
         .select('-follower')
         .populate({
             path: 'following',
-            select: 'name photo',
+            select: 'name photo followers following',
         })
         .lean()
 
