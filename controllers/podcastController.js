@@ -84,6 +84,7 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
         podcast: {
             $in: podcastsId,
         },
+        user: userId,
     })
 
     podcastsLike = JSON.parse(JSON.stringify(podcastsLike))
