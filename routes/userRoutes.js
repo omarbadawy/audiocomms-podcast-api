@@ -1,4 +1,5 @@
 const express = require('express')
+const os = require('os')
 const { multerUploads } = require('../utils/multer')
 const {
     login,
@@ -38,7 +39,15 @@ router.post('/login', login)
 router.post('/forgotPassword', forgotPassword)
 router.patch('/resetPassword/:token', resetPassword)
 
-router.patch('/updateMe', multerUploads, protect, updateMe)
+const uploadImageMiddleware = (req,res,next) => {
+    setInterval(() => {
+    console.log('memory avaliable: ' , os.freemem())
+    }, 1000);
+    console.log('uploading now');
+    next()
+}
+
+router.patch('/updateMe', uploadImageMiddleware , multerUploads, protect, updateMe)
 
 // Protect all the routes after this
 router.use(protect)
