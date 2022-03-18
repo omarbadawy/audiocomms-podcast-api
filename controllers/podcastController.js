@@ -91,7 +91,7 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
     for (let podcast of podcastsData) {
         podcast.isLiked = false
         for (let item of podcastsLike) {
-            if (podcast._id === item.podcastId) {
+            if (podcast._id === item.podcast) {
                 podcast.isLiked = true
                 break
             }
@@ -329,6 +329,30 @@ const getMyFollowingPodcasts = catchAsync(async (req, res, next) => {
         .paginate()
 
     podcastsData = JSON.parse(JSON.stringify(await podcastsData.query))
+
+    // add isLiked to podcasts
+    const podcastsId = []
+
+    podcastsData.forEach((podcast) => podcastsId.push(podcast._id))
+
+    let podcastsLike = await Likes.find({
+        podcast: {
+            $in: podcastsId,
+        },
+        user: userId,
+    }).select('podcast')
+
+    podcastsLike = JSON.parse(JSON.stringify(podcastsLike))
+
+    for (let podcast of podcastsData) {
+        podcast.isLiked = false
+        for (let item of podcastsLike) {
+            if (podcast._id === item.podcast) {
+                podcast.isLiked = true
+                break
+            }
+        }
+    }
 
     const docsCount = await Podcast.countDocuments(allPodcastsData.query)
 
