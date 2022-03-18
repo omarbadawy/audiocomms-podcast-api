@@ -39,15 +39,15 @@ router.post('/login', login)
 router.post('/forgotPassword', forgotPassword)
 router.patch('/resetPassword/:token', resetPassword)
 
-const uploadImageMiddleware = (req,res,next) => {
-    setInterval(() => {
-    console.log('memory avaliable: ' , os.freemem())
-    }, 1000);
-    console.log('uploading now');
-    next()
-}
+// const uploadImageMiddleware = (req,res,next) => {
+//     setInterval(() => {
+//     console.log('memory avaliable: ' , os.freemem())
+//     }, 1000);
+//     console.log('uploading now');
+//     next()
+// }
 
-router.patch('/updateMe', uploadImageMiddleware , multerUploads, protect, updateMe)
+router.patch('/updateMe' , multerUploads, protect, updateMe)
 
 // Protect all the routes after this
 router.use(protect)
