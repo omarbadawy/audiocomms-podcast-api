@@ -150,7 +150,8 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         'language',
         'country',
         'userType',
-        'photo'
+        'photo',
+        'bio'
     )
 
     //Update user document
