@@ -89,6 +89,14 @@ const userSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        bio: {
+            type: String,
+            trim: true,
+            maxlength: [
+                150,
+                'A user bio must have less or equal than 150 characters',
+            ],
+        },
         password: {
             type: String,
             required: [true, 'Please provide a password'],
