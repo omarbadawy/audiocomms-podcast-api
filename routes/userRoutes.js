@@ -1,5 +1,6 @@
 const express = require('express')
 const os = require('os')
+const AppError = require('./../utils/appError')
 const { multerUploads } = require('../utils/multer')
 const {
     login,
@@ -39,15 +40,20 @@ router.post('/login', login)
 router.post('/forgotPassword', forgotPassword)
 router.patch('/resetPassword/:token', resetPassword)
 
-// const uploadImageMiddleware = (req,res,next) => {
-//     setInterval(() => {
-//     console.log('memory avaliable: ' , os.freemem())
-//     }, 1000);
-//     console.log('uploading now');
-//     next()
-// }
-
-router.patch('/updateMe' , multerUploads, protect, updateMe)
+const fileSizeLimitErrorHandler = (err, req, res, next) => {
+    if (err) {
+        next(new AppError(`File is too large, it must be less than 2Mb`, 400))
+    } else {
+        next()
+    }
+}
+router.patch(
+    '/updateMe',
+    multerUploads,
+    fileSizeLimitErrorHandler,
+    protect,
+    updateMe
+)
 
 // Protect all the routes after this
 router.use(protect)
