@@ -40,17 +40,17 @@ router.post('/login', login)
 router.post('/forgotPassword', forgotPassword)
 router.patch('/resetPassword/:token', resetPassword)
 
-const fileSizeLimitErrorHandler = (err, req, res, next) => {
-    if (err) {
-        next(new AppError(`File is too large, it must be less than 2Mb`, 400))
-    } else {
-        next()
-    }
-}
+// const fileSizeLimitErrorHandler = (err, req, res, next) => {
+//     if (err) {
+//         next(new AppError(`File is too large, it must be less than 2Mb`, 400))
+//     } else {
+//         next()
+//     }
+// }
 router.patch(
     '/updateMe',
     multerUploads,
-    fileSizeLimitErrorHandler,
+    // fileSizeLimitErrorHandler,
     protect,
     updateMe
 )

@@ -76,143 +76,169 @@ const getAllFollowingEvents = catchAsync(async (req, res, next) => {
     })
 })
 const getEvent = catchAsync(async (req, res, next) => {
-    try {
-        // const { id: userId } = req.user
-        const { id: eventId } = req.params
+    // try {
+    // const { id: userId } = req.user
+    const { id: eventId } = req.params
 
-        if (!eventId) {
-            return next(
-                new AppError(
-                    'Please, check the podcast id param',
-                    StatusCodes.BAD_REQUEST
-                )
+    if (!eventId) {
+        return next(
+            new AppError(
+                'Please, check the podcast id param',
+                StatusCodes.BAD_REQUEST
             )
-        }
-
-        const data = await Event.find({ eventId }).populate(
-            'createdBy',
-            'name photo country language'
         )
-
-        if (!data) {
-            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
-        }
-
-        res.status(StatusCodes.OK).json({
-            status: 'success',
-            data,
-        })
-    } catch (error) {
-        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
     }
+
+    const data = await Event.findById(eventId).populate(
+        'createdBy',
+        'name photo country language'
+    )
+
+    if (!data) {
+        return next(new AppError('Not found', StatusCodes.NOT_FOUND))
+    }
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data,
+    })
+    // } catch (error) {
+    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // }
 })
 const createEvent = catchAsync(async (req, res, next) => {
-    try {
-        const { date, description, name } = req.body
-        const { id: userId } = req.user
-        const isDateAfterNow = () => {
-            return new Date(Date.now()) < new Date(date)
-        }
-
-        if (!date || !isDateAfterNow(date)) {
-            return next(
-                new AppError(
-                    'Please, check the date or the date is gone',
-                    StatusCodes.BAD_REQUEST
-                )
-            )
-        }
-
-        const data = await Event.create({
-            createdBy: userId,
-            date,
-            description,
-            name,
-        })
-
-        res.status(StatusCodes.CREATED).json({
-            status: 'success',
-            data,
-        })
-    } catch (error) {
-        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // try {
+    const { date, description, name } = req.body
+    const { id: userId } = req.user
+    const isDateAfterNow = () => {
+        return new Date(Date.now()) < new Date(date)
     }
+
+    if (!date || !isDateAfterNow(date)) {
+        return next(
+            new AppError(
+                'Please, check the date or the date is gone',
+                StatusCodes.BAD_REQUEST
+            )
+        )
+    }
+
+    const data = await Event.create({
+        createdBy: userId,
+        date,
+        description,
+        name,
+    })
+
+    res.status(StatusCodes.CREATED).json({
+        status: 'success',
+        data,
+    })
+    // } catch (error) {
+    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // }
 })
 
 const updateEvent = catchAsync(async (req, res, next) => {
-    try {
-        const { id: eventId } = req.params
-        const { id: userId } = req.user
-        const { name, description, date } = req.body
-        const isDateAfterNow = () => {
-            return new Date(Date.now()) < new Date(date)
-        }
-
-        if (!date || !isDateAfterNow(date)) {
-            return next(
-                new AppError(
-                    'Please, check the date or the date is gone',
-                    StatusCodes.BAD_REQUEST
-                )
-            )
-        }
-        const data = await Event.findOneAndUpdate(
-            { _id: eventId, createdBy: userId },
-            { name, description, date },
-            {
-                new: true,
-                runValidators: true,
-            }
-        ).populate('createdBy', 'name photo country language')
-        if (!data) {
-            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
-        }
-        res.status(StatusCodes.OK).json({ status: 'success', data })
-    } catch (error) {
-        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // try {
+    const { id: eventId } = req.params
+    const { id: userId } = req.user
+    const { name, description, date } = req.body
+    const isDateAfterNow = () => {
+        return new Date(Date.now()) < new Date(date)
     }
+
+    if (!date || !isDateAfterNow(date)) {
+        return next(
+            new AppError(
+                'Please, check the date or the date is gone',
+                StatusCodes.BAD_REQUEST
+            )
+        )
+    }
+
+    if (!eventId) {
+        return next(
+            new AppError(
+                'Please, check event id param',
+                StatusCodes.BAD_REQUEST
+            )
+        )
+    }
+
+    const data = await Event.findOneAndUpdate(
+        { _id: eventId, createdBy: userId },
+        { name, description, date },
+        {
+            new: true,
+            runValidators: true,
+        }
+    ).populate('createdBy', 'name photo country language')
+    if (!data) {
+        return next(new AppError('Not found', StatusCodes.NOT_FOUND))
+    }
+    res.status(StatusCodes.OK).json({ status: 'success', data })
+    // } catch (error) {
+    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // }
 })
 const deleteEvent = catchAsync(async (req, res, next) => {
-    try {
-        const { id: eventId } = req.params
-        const { id: userId } = req.user
-
-        const data = await Event.findOneAndRemove({
-            _id: eventId,
-            createdBy: userId,
-        })
-
-        if (!data) {
-            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
-        }
-
-        res.status(StatusCodes.OK).json({
-            status: 'success',
-            message: 'Event is removed',
-        })
-    } catch (error) {
-        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // try {
+    const { id: eventId } = req.params
+    const { id: userId } = req.user
+    if (!eventId) {
+        return next(
+            new AppError(
+                'Please, check event id param',
+                StatusCodes.BAD_REQUEST
+            )
+        )
     }
+
+    const data = await Event.findOneAndRemove({
+        _id: eventId,
+        createdBy: userId,
+    })
+
+    if (!data) {
+        return next(new AppError('Not found', StatusCodes.NOT_FOUND))
+    }
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        message: 'Event is removed',
+    })
+    // } catch (error) {
+    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // }
 })
 
 const deleteEventById = catchAsync(async (req, res, next) => {
-    try {
-        const { id: eventId } = req.params
-        const data = await Event.findOneAndRemove({
-            _id: eventId,
-        })
-
-        if (!data) {
-            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
-        }
-
-        res.status(StatusCodes.OK).json({
-            status: 'success',
-            message: 'Event is removed',
-        })
-    } catch (error) {
-        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // try {
+    const { id: eventId } = req.params
+    if (!eventId) {
+        return next(
+            new AppError(
+                'Please, check event id param',
+                StatusCodes.BAD_REQUEST
+            )
+        )
     }
+    const data = await Event.findOneAndRemove({
+        _id: eventId,
+    })
+
+    if (!data) {
+        return next(new AppError('Not found', StatusCodes.NOT_FOUND))
+    }
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        message: 'Event is removed',
+    })
+    // } catch (error) {
+    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // }
 })
 
 module.exports = {
