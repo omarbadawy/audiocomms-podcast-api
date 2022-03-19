@@ -77,6 +77,12 @@ module.exports = (err, req, res, next) => {
         if (error.name === 'TokenExpiredError') error = handleJWTExpiredError()
         if (error.name === 'MulterError' && error.message.includes('too large'))
             error = handleFileTooLarge()
+        if (
+            error.request_options &&
+            error.request_options.host &&
+            error.request_options.host === 'api.cloudinary.com'
+        )
+            error = new AppError(error.error.message, 400)
 
         sendErrorProd(error, req, res)
     }

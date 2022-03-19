@@ -5,7 +5,7 @@ const Category = require('../models/categoryModel')
 const catchAsync = require('../utils/catchAsync')
 const AppError = require('../utils/appError')
 const { StatusCodes } = require('http-status-codes')
-const { uploader, createImageUpload } = require('../utils/cloudinary')
+const { uploader, api, createImageUpload } = require('../utils/cloudinary')
 const ApiFeatures = require('../utils/apiFeatures')
 
 const getAllPodcasts = catchAsync(async (req, res, next) => {
@@ -110,50 +110,66 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
 })
 
 const getPodcast = catchAsync(async (req, res, next) => {
-    try {
-        const { id: podcastId } = req.params
-        const { id: userId } = req.user
+    // try {
+    const { id: podcastId } = req.params
+    const { id: userId } = req.user
 
-        let data = await Podcast.findOne({
-            _id: podcastId,
-        }).populate('createdBy', 'name photo country language')
-
-        if (!data) {
-            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
-        }
-
-        const userLike = await Likes.findOne({
-            podcast: podcastId,
-            user: userId,
-        })
-
-        data = JSON.parse(JSON.stringify(data))
-        data.isLiked = userLike ? true : false
-        res.status(StatusCodes.OK).json({
-            status: 'success',
-            data,
-        })
-    } catch (error) {
-        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    if (!podcastId) {
+        return next(
+            new AppError(
+                'Please, check podcast id param',
+                StatusCodes.BAD_REQUEST
+            )
+        )
     }
+
+    let data = await Podcast.findOne({
+        _id: podcastId,
+    }).populate('createdBy', 'name photo country language')
+
+    if (!data) {
+        return next(new AppError('Not found', StatusCodes.NOT_FOUND))
+    }
+
+    const userLike = await Likes.findOne({
+        podcast: podcastId,
+        user: userId,
+    })
+
+    data = JSON.parse(JSON.stringify(data))
+    data.isLiked = userLike ? true : false
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data,
+    })
+    // } catch (error) {
+    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // }
 })
 
 const createPodcast = catchAsync(async (req, res, next) => {
     req.body.createdBy = req.user.id
     const { audio, category } = req.body
-    if (!audio) {
+    if (!audio || !audio.public_id) {
         return next(
             new AppError(
-                'Please, Provide the Audio Object',
+                'Please, Provide the Audio Object with this info ( public_id )',
                 StatusCodes.BAD_REQUEST
             )
         )
     }
     const audioTypes = ['wav', 'mp3', 'mp4', 'wma', 'flac', 'm4a']
     const isAudio = (audio) => {
-        return audioTypes.some((suffix) => audio.secure_url.endsWith(suffix))
+        return (
+            audioTypes.some((suffix) => audio.format.endsWith(suffix)) &&
+            audio.is_audio
+        )
     }
-    if (!isAudio(audio)) {
+    const fileResource = await api.resource(audio.public_id, {
+        resource_type: 'video',
+        image_metadata: true,
+    })
+    if (!isAudio(fileResource)) {
         return next(
             new AppError(
                 'Not audio , make sure that you uploaded an audio',
@@ -161,21 +177,6 @@ const createPodcast = catchAsync(async (req, res, next) => {
             )
         )
     }
-
-    if (
-        !audio.secure_url.startsWith(
-            `https://res.cloudinary.com/${process.env.CLOUD_NAME}`
-        ) ||
-        !audio.public_id.startsWith('podcasts')
-    ) {
-        return next(
-            new AppError(
-                'Invaild cloudinary url or public_id',
-                StatusCodes.BAD_REQUEST
-            )
-        )
-    }
-    req.body.audio = undefined
 
     if (category) {
         const categoryData = await Category.findOne({ name: category })
@@ -190,12 +191,14 @@ const createPodcast = catchAsync(async (req, res, next) => {
         }
     }
 
+    req.body.audio = undefined
+
     let data = await Podcast.create({
         ...req.body,
         audio: {
-            url: audio.secure_url,
-            duration: audio.duration,
-            publicID: audio.public_id,
+            url: fileResource.secure_url,
+            duration: fileResource.duration,
+            publicID: fileResource.public_id,
         },
     })
 
@@ -207,92 +210,117 @@ const createPodcast = catchAsync(async (req, res, next) => {
 })
 
 const updatePodcast = catchAsync(async (req, res, next) => {
-    try {
-        const { id: PodcastId } = req.params
-        const { id: userId } = req.user
-        const { category, name } = req.body
+    // try {
+    const { id: podcastId } = req.params
+    const { id: userId } = req.user
+    const { category, name } = req.body
 
-        if (category) {
-            const categoryData = await Category.findOne({ name: category })
-
-            if (!categoryData) {
-                return next(
-                    new AppError(
-                        'There is no category with this name',
-                        StatusCodes.BAD_REQUEST
-                    )
-                )
-            }
-        }
-        const data = await Podcast.findOneAndUpdate(
-            { _id: PodcastId, createdBy: userId },
-            { category, name },
-            {
-                new: true,
-                runValidators: true,
-            }
-        ).populate('createdBy', 'name photo country language')
-        if (!data) {
-            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
-        }
-        res.status(StatusCodes.OK).json({ status: 'success', data })
-    } catch (error) {
-        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    if (!podcastId) {
+        return next(
+            new AppError(
+                'Please, check podcast id param',
+                StatusCodes.BAD_REQUEST
+            )
+        )
     }
+
+    if (category) {
+        const categoryData = await Category.findOne({ name: category })
+
+        if (!categoryData) {
+            return next(
+                new AppError(
+                    'There is no category with this name',
+                    StatusCodes.BAD_REQUEST
+                )
+            )
+        }
+    }
+    const data = await Podcast.findOneAndUpdate(
+        { _id: podcastId, createdBy: userId },
+        { category, name },
+        {
+            new: true,
+            runValidators: true,
+        }
+    ).populate('createdBy', 'name photo country language')
+    if (!data) {
+        return next(new AppError('Not found', StatusCodes.NOT_FOUND))
+    }
+    res.status(StatusCodes.OK).json({ status: 'success', data })
+    // } catch (error) {
+    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // }
 })
 
 const deletePodcast = catchAsync(async (req, res, next) => {
-    try {
-        const { id: PodcastId } = req.params
-        const { id: userId } = req.user
-        const data = await Podcast.findOneAndRemove({
-            _id: PodcastId,
-            createdBy: userId,
-        })
-
-        if (!data) {
-            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
-        }
-
-        await Likes.deleteMany({ podcast: PodcastId })
-
-        await uploader.destroy(data.audio.publicID, {
-            resource_type: 'video',
-        })
-
-        res.status(StatusCodes.OK).json({
-            status: 'success',
-            message: 'Podcast is deleted',
-        })
-    } catch (error) {
-        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // try {
+    const { id: PodcastId } = req.params
+    const { id: userId } = req.user
+    if (!PodcastId) {
+        return next(
+            new AppError(
+                'Please, check podcast id param',
+                StatusCodes.BAD_REQUEST
+            )
+        )
     }
+    const data = await Podcast.findOneAndRemove({
+        _id: PodcastId,
+        createdBy: userId,
+    })
+
+    if (!data) {
+        return next(new AppError('Not found', StatusCodes.NOT_FOUND))
+    }
+
+    await Likes.deleteMany({ podcast: PodcastId })
+
+    await uploader.destroy(data.audio.publicID, {
+        resource_type: 'video',
+    })
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        message: 'Podcast is deleted',
+    })
+    // } catch (error) {
+    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // }
 })
 
 const deletePodcastById = catchAsync(async (req, res, next) => {
-    try {
-        const { id: PodcastId } = req.params
-        const data = await Podcast.findOneAndRemove({
-            _id: PodcastId,
-        })
-
-        if (!data) {
-            return next(new AppError('Not found', StatusCodes.NOT_FOUND))
-        }
-
-        await Likes.deleteMany({ podcast: PodcastId })
-
-        await uploader.destroy(data.audio.publicID, {
-            resource_type: 'video',
-        })
-
-        res.status(StatusCodes.OK).json({
-            status: 'success',
-            message: 'Podcast is deleted',
-        })
-    } catch (error) {
-        next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // try {
+    const { id: podcastId } = req.params
+    if (!podcastId) {
+        return next(
+            new AppError(
+                'Please, check podcast id param',
+                StatusCodes.BAD_REQUEST
+            )
+        )
     }
+    const data = await Podcast.findOneAndRemove({
+        _id: podcastId,
+    })
+
+    if (!data) {
+        return next(new AppError('Not found', StatusCodes.NOT_FOUND))
+    }
+
+    await Likes.deleteMany({ podcast: podcastId })
+
+    await uploader.destroy(data.audio.publicID, {
+        resource_type: 'video',
+    })
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        message: 'Podcast is deleted',
+    })
+    // } catch (error) {
+    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
+    // }
 })
 
 const getMyFollowingPodcasts = catchAsync(async (req, res, next) => {

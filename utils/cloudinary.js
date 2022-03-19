@@ -1,4 +1,4 @@
-const { config, uploader, utils } = require('cloudinary').v2
+const { config, uploader, utils, api } = require('cloudinary').v2
 
 const cloudinaryConfig = (req, res, next) => {
     config({
@@ -23,5 +23,6 @@ const createImageUpload = async () => {
 module.exports = {
     createImageUpload,
     uploader,
+    api,
     cloudinaryConfig,
 }
