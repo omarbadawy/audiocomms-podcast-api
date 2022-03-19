@@ -165,10 +165,19 @@ const createPodcast = catchAsync(async (req, res, next) => {
             audio.is_audio
         )
     }
-    const fileResource = await api.resource(audio.public_id, {
-        resource_type: 'video',
-        image_metadata: true,
-    })
+    const fileResource = await api.resource(
+        audio.public_id,
+        {
+            resource_type: 'video',
+            image_metadata: true,
+        },
+        (err) => {
+            if (err) {
+                return next(new AppError(err.message, 400))
+            }
+        }
+    )
+
     if (!isAudio(fileResource)) {
         return next(
             new AppError(
