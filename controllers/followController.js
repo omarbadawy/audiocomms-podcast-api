@@ -131,8 +131,10 @@ exports.unFollowUser = catchAsync(async (req, res, next) => {
 
     if (!data) {
         return next(
-            new AppError('You did not follow that user'),
-            StatusCodes.NOT_FOUND
+            new AppError(
+                'You did not follow that user',
+                StatusCodes.BAD_REQUEST
+            )
         )
     }
 
