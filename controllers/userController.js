@@ -162,7 +162,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
             new: true,
             runValidators: true,
         }
-    )
+    ).select('+email -active')
 
     // send the response
     res.status(200).json({
