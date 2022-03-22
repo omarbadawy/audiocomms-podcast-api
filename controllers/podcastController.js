@@ -158,13 +158,13 @@ const createPodcast = catchAsync(async (req, res, next) => {
             )
         )
     }
-    const audioTypes = ['wav', 'mp3', 'mp4', 'wma', 'flac', 'm4a']
-    const isAudio = (audio) => {
-        return (
-            audioTypes.some((suffix) => audio.format.endsWith(suffix)) &&
-            audio.is_audio
-        )
-    }
+    // const audioTypes = ['wav', 'mp3', 'mp4', 'wma', 'flac', 'm4a']
+    // const isAudio = (audio) => {
+    //     return (
+    //         audioTypes.some((suffix) => audio.format.endsWith(suffix)) &&
+    //         audio.is_audio
+    //     )
+    // }
     const fileResource = await api.resource(
         audio.public_id,
         {
@@ -178,7 +178,7 @@ const createPodcast = catchAsync(async (req, res, next) => {
         }
     )
 
-    if (!isAudio(fileResource)) {
+    if (!fileResource.is_audio) {
         return next(
             new AppError(
                 'Not audio , make sure that you uploaded an audio',
