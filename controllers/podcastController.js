@@ -178,7 +178,7 @@ const createPodcast = catchAsync(async (req, res, next) => {
         }
     )
 
-    if (!fileResource.is_audio) {
+    if (!fileResource.video_metadata.is_audio) {
         return next(
             new AppError(
                 'Not audio , make sure that you uploaded an audio',
