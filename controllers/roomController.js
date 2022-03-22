@@ -50,34 +50,6 @@ exports.getAllRooms = catchAsync(async (req, res, next) => {
     })
 })
 
-exports.createRoom = catchAsync(async (req, res, next) => {
-    const { name, category, status } = req.body
-    if (category) {
-        const categoryData = await Category.findOne({ name: category })
-
-        if (!categoryData) {
-            return next(
-                new AppError(
-                    'There is no category with this name',
-                    StatusCodes.BAD_REQUEST
-                )
-            )
-        }
-    }
-
-    const room = await Room.create({
-        name,
-        admin: req.user.id,
-        category,
-        status,
-    })
-
-    res.status(StatusCodes.CREATED).json({
-        status: 'success',
-        room,
-    })
-})
-
 exports.generateAgoraToken = catchAsync(async (req, res, next) => {
     const { channel } = req.query
     // let uid = req.body.uid;

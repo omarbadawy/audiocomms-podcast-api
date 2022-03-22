@@ -1,5 +1,6 @@
 const User = require('../models/userModel')
 const Room = require('../models/roomModel')
+const Category = require('../models/categoryModel')
 
 const { promisify } = require('util')
 const jwt = require('jsonwebtoken')
@@ -21,7 +22,7 @@ exports.socketAuthMiddleware = async (socket, next) => {
         if (!currentUser) {
             return next(
                 new Error(
-                    'The user belonging to this token does no longer exist.'
+                    'The user belonging to this token does no longer exist'
                 )
             )
         }
@@ -30,7 +31,7 @@ exports.socketAuthMiddleware = async (socket, next) => {
         if (currentUser.changedPasswordAfter(decoded.iat)) {
             return next(
                 new Error(
-                    'User recently changed the password! Please log in again.'
+                    'User recently changed the password! Please log in again'
                 )
             )
         }
@@ -51,15 +52,92 @@ exports.socketIOHandler = function (io) {
     return (socket) => {
         console.log('client connected: ' + socket.id)
         socket.user.socketId = socket.id
-        socket.on('joinRoom', async (roomData) => {
+
+        socket.on('error', (err) => {
+            if (err) {
+                socket.disconnect()
+            }
+        })
+
+        socket.on('createRoom', async (roomData) => {
+            const { name, category, status } = roomData
+
+            if (!name || !category || !status) {
+                io.to(socket.id).emit(
+                    'errorMessage',
+                    'name, categoy and status are required'
+                )
+                return
+            }
+
+            try {
+                const categoryData = await Category.findOne({ name: category })
+
+                if (!categoryData) {
+                    io.to(socket.id).emit(
+                        'errorMessage',
+                        'There is no category with that name'
+                    )
+                    return
+                }
+
+                const room = await Room.create({
+                    name,
+                    admin: socket.user.id,
+                    category,
+                    status,
+                    isActivated: true,
+                })
+
+                socket.join(room.name)
+                socket.timerId = setTimeout(async () => {
+                    const sockets = await io
+                        .in(existingRoom.name)
+                        .fetchSockets()
+                    if (sockets.length > 0) {
+                        io.to(existingRoom.name).emit('roomEnded')
+                        io.in(existingRoom.name).disconnectSockets(true)
+                    }
+                }, 18000000)
+                socket.user.roomName = room.name
+                const token = generateRTC(socket.user.roomName, true)
+                io.to(socket.id).emit(
+                    'createRoomSuccess',
+                    socket.user,
+                    room,
+                    token
+                )
+            } catch (error) {
+                let message = "Couldn't create room"
+                if (error.kind === 'ObjectId')
+                    message = `Invalid ${error.path}: ${error.value}`
+
+                if (error.code === 11000)
+                    message = `Duplicate field value: ${JSON.stringify(
+                        error.keyValue
+                    )}. Please use another value`
+
+                if (error.message.includes('validation failed')) {
+                    const errors = Object.values(error.errors).map(
+                        (el) => el.message
+                    )
+
+                    message = `Invalid input data. ${errors.join('. ')}`
+                }
+                io.to(socket.id).emit('errorMessage', message)
+                return
+            }
+        })
+
+        socket.on('joinRoom', async (roomName) => {
             const userRooms = Array.from(socket.rooms)
             if (userRooms.length > 1) {
                 io.to(socket.id).emit('errorMessage', 'already in room')
                 return
             }
 
-            if (roomData?._id) {
-                const existingRoom = await Room.findById(roomData._id)
+            if (roomName) {
+                const existingRoom = await Room.findOne({ name: roomName })
 
                 if (!existingRoom) {
                     io.to(socket.id).emit('errorMessage', 'room not found')
@@ -67,40 +145,13 @@ exports.socketIOHandler = function (io) {
                 }
 
                 console.log('socket user id', socket.user.id)
-                if (
-                    existingRoom.admin.toString() === socket.user.id.toString()
-                ) {
-                    if (existingRoom.isActivated) {
-                        io.to(socket.id).emit(
-                            'errorMessage',
-                            'admin already in room'
-                        )
-                        return
-                    }
 
-                    socket.join(existingRoom.name)
-                    io.to(socket.id).emit('joinRoomSuccess', socket.user)
-                    // setting id of timer to the admin socket
-                    socket.timerId = setTimeout(async () => {
-                        const sockets = await io
-                            .in(existingRoom.name)
-                            .fetchSockets()
-                        if (sockets.length > 0) {
-                            io.to(existingRoom.name).emit('roomEnded')
-                            io.in(existingRoom.name).disconnectSockets(true)
-                        }
-                    }, 18000000)
-                    await Room.updateOne(
-                        { _id: existingRoom._id },
-                        { isActivated: true }
-                    )
-                    socket.user.roomName = existingRoom.name
-
-                    return
-                }
                 if (
                     existingRoom.audience.includes(socket.user.id.toString()) ||
-                    existingRoom.brodcasters.includes(socket.user.id.toString())
+                    existingRoom.brodcasters.includes(
+                        socket.user.id.toString()
+                    ) ||
+                    existingRoom.admin.toString() === socket.user.id.toString()
                 ) {
                     io.to(socket.id).emit(
                         'errorMessage',
@@ -110,7 +161,7 @@ exports.socketIOHandler = function (io) {
                 }
 
                 const room = await Room.findOneAndUpdate(
-                    { _id: roomData._id },
+                    { name: roomName },
                     {
                         $push: { audience: socket.user.id },
                     },
@@ -122,9 +173,37 @@ exports.socketIOHandler = function (io) {
 
                 socket.user.roomName = room.name
                 socket.join(room.name)
-                io.to(socket.id).emit('joinRoomSuccess', socket.user)
+                io.to(socket.id).emit('joinRoomSuccess', socket.user, room)
 
                 socket.to(room.name).emit('userJoined', socket.user)
+            }
+        })
+
+        socket.on('adminReJoinRoom', async () => {
+            const adminFoundInRoom = await Room.findOne({
+                admin: socket.user.id,
+            })
+            if (adminFoundInRoom && adminFoundInRoom.isActivated === false) {
+                socket.join(adminFoundInRoom.name)
+                socket.user.roomName = adminFoundInRoom.name
+                const room = await Room.findOneAndUpdate(
+                    { name: adminFoundInRoom.name },
+                    {
+                        isActivated: true,
+                    },
+                    {
+                        new: true,
+                        runValidators: true,
+                    }
+                )
+
+                io.to(socket.id).emit(
+                    'adminReJoinedRoomSuccess',
+                    socket.user,
+                    room
+                )
+            } else {
+                io.to(socket.id).emit('errorMessage', "can't join room")
             }
         })
 
@@ -133,8 +212,9 @@ exports.socketIOHandler = function (io) {
                 socket
                     .to(socket.user.roomName)
                     .emit('userAskedForPerms', socket.user)
+            } else {
+                io.to(socket.id).emit('errorMessage', 'no room specified')
             }
-            io.to(socket.id).emit('errorMessage', 'no room specified')
         })
 
         socket.on('givePermsTo', async (user) => {
@@ -301,31 +381,49 @@ exports.socketIOHandler = function (io) {
             const existingRoom = await Room.findOne({
                 name: socket.user.roomName,
             })
+            console.log('user', socket.user)
+            console.log('room', existingRoom)
             if (existingRoom) {
                 if (
                     socket.user.id.toString() === existingRoom.admin.toString()
                 ) {
-                    io.to(existingRoom.name).emit('adminLeft')
-                    clearTimeout(socket.timerId)
-                    io.in(socket.user.roomName).disconnectSockets(true)
-                    try {
-                        await Room.findOneAndDelete({
-                            name: socket.user.roomName,
-                        })
-                    } catch (err) {
-                        console.log(err)
-                    }
+                    await Room.updateOne(
+                        { _id: existingRoom._id },
+                        {
+                            isActivated: false,
+                        }
+                    )
+                    setTimeout(async () => {
+                        const roomStatus = await Room.findById(
+                            existingRoom._id
+                        ).select('isActivated')
+                        if (!roomStatus.isActivated) {
+                            io.to(existingRoom.name).emit('adminLeft')
+                            clearTimeout(socket.timerId)
+                            io.in(socket.user.roomName).disconnectSockets(true)
+                            try {
+                                const foundRoom = await Room.findOneAndDelete({
+                                    name: socket.user.roomName,
+                                })
+
+                                console.log('foundRoom', foundRoom)
+                            } catch (err) {
+                                console.log(err)
+                            }
+                        }
+                    }, 30000)
+                } else {
+                    io.to(existingRoom.name).emit('userLeft', socket.user)
+                    await Room.updateOne(
+                        { _id: existingRoom._id },
+                        {
+                            $pull: {
+                                audience: socket.user.id,
+                                brodcasters: socket.user.id,
+                            },
+                        }
+                    )
                 }
-                io.to(existingRoom.name).emit('userLeft', socket.user)
-                await Room.updateOne(
-                    { _id: existingRoom._id },
-                    {
-                        $pull: {
-                            audience: socket.user.id,
-                            brodcasters: socket.user.id,
-                        },
-                    }
-                )
             }
             console.log('userLeft: ', socket.user.id)
         })

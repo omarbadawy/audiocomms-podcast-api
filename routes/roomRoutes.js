@@ -1,7 +1,6 @@
 const express = require('express')
 
 const {
-    createRoom,
     getAllRooms,
     getRoom,
     generateAgoraToken,
@@ -14,7 +13,7 @@ const router = express.Router()
 
 router.use(protect)
 
-router.route('/').get(getAllRooms).post(createRoom)
+router.route('/').get(getAllRooms)
 router.get('/generateToken', generateAgoraToken)
 router.get('/search', searchRoom)
 router.get('/:id', getRoom)
