@@ -177,8 +177,37 @@ const createPodcast = catchAsync(async (req, res, next) => {
             }
         }
     )
+    if (fileResource.is_audio || fileResource.video_metadata.is_audio) {
+        if (category) {
+            const categoryData = await Category.findOne({ name: category })
 
-    if (!fileResource.video_metadata.is_audio) {
+            if (!categoryData) {
+                return next(
+                    new AppError(
+                        'There is no category with this name',
+                        StatusCodes.BAD_REQUEST
+                    )
+                )
+            }
+        }
+
+        req.body.audio = undefined
+
+        let data = await Podcast.create({
+            ...req.body,
+            audio: {
+                url: fileResource.secure_url,
+                duration: fileResource.duration,
+                publicID: fileResource.public_id,
+            },
+        })
+
+        data = await data
+            .populate('createdBy', 'name photo country language')
+            .execPopulate()
+
+        res.status(StatusCodes.CREATED).json({ status: 'success', data })
+    } else {
         return next(
             new AppError(
                 'Not audio , make sure that you uploaded an audio',
@@ -186,36 +215,6 @@ const createPodcast = catchAsync(async (req, res, next) => {
             )
         )
     }
-
-    if (category) {
-        const categoryData = await Category.findOne({ name: category })
-
-        if (!categoryData) {
-            return next(
-                new AppError(
-                    'There is no category with this name',
-                    StatusCodes.BAD_REQUEST
-                )
-            )
-        }
-    }
-
-    req.body.audio = undefined
-
-    let data = await Podcast.create({
-        ...req.body,
-        audio: {
-            url: fileResource.secure_url,
-            duration: fileResource.duration,
-            publicID: fileResource.public_id,
-        },
-    })
-
-    data = await data
-        .populate('createdBy', 'name photo country language')
-        .execPopulate()
-
-    res.status(StatusCodes.CREATED).json({ status: 'success', data })
 })
 
 const updatePodcast = catchAsync(async (req, res, next) => {
