@@ -109,6 +109,65 @@ const getMyPodcasts = catchAsync(async (req, res, next) => {
     })
 })
 
+const getAllPodcastsWithoutMe = catchAsync(async (req, res, next) => {
+    const { id: userId } = req.user
+    const allData = new ApiFeatures(
+        Podcast.find({
+            createdBy: {
+                $ne: userId,
+            },
+        }),
+        req.query
+    ).filter()
+
+    const data = new ApiFeatures(
+        Podcast.find({
+            createdBy: {
+                $ne: userId,
+            },
+        }).populate('createdBy', 'name photo country language'),
+        req.query
+    )
+        .filter()
+        .sort()
+        .limitFields()
+        .paginate()
+    const query = await data.query
+
+    const podcastsData = JSON.parse(JSON.stringify(query))
+    const podcastsId = []
+
+    podcastsData.forEach((podcast) => podcastsId.push(podcast._id))
+
+    let podcastsLike = await Likes.find({
+        user: req.user.id,
+        podcast: {
+            $in: podcastsId,
+        },
+    })
+
+    podcastsLike = JSON.parse(JSON.stringify(podcastsLike))
+
+    for (let podcast of podcastsData) {
+        podcast.isLiked = false
+        for (let item of podcastsLike) {
+            if (podcast._id === item.podcast) {
+                podcast.isLiked = true
+                break
+            }
+        }
+    }
+
+    const docsCount = await Podcast.countDocuments(allData.query)
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        results: podcastsData.length,
+        data: podcastsData,
+        docsCount,
+    })
+})
+
 const getPodcast = catchAsync(async (req, res, next) => {
     // try {
     const { id: podcastId } = req.params
@@ -440,6 +499,7 @@ module.exports = {
     deletePodcastById,
     getMyPodcasts,
     getMyFollowingPodcasts,
+    getAllPodcastsWithoutMe,
     searchPodcast,
     generateSignature,
 }
