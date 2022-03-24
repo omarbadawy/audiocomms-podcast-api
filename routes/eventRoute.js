@@ -2,6 +2,7 @@ const express = require('express')
 const {
     getAllEvents,
     getEvent,
+    getMyEvents,
     createEvent,
     deleteEvent,
     updateEvent,
@@ -17,7 +18,8 @@ router.use(protect)
 
 router.get('/admin', restrictTo('admin'), getAllEvents)
 
-router.get('/me', getAllFollowingEvents)
+router.get('/', getAllFollowingEvents)
+router.get('/me', getMyEvents)
 router.get('/:id', getEvent)
 router.post('/me', createEvent)
 router.patch('/:id', updateEvent)

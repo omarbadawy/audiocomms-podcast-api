@@ -31,6 +31,39 @@ const getAllEvents = catchAsync(async (req, res, next) => {
     })
 })
 
+const getMyEvents = catchAsync(async (req, res, next) => {
+    const { id: userId } = req.user
+    const allEventsData = new ApiFeatures(
+        Event.find({ createdBy: userId }).populate(
+            'createdBy',
+            'name photo country language'
+        ),
+        req.query
+    ).filter()
+
+    let eventsData = new ApiFeatures(
+        Event.find({ createdBy: userId }).populate(
+            'createdBy',
+            'name photo country language'
+        ),
+        req.query
+    )
+        .filter()
+        .sort()
+        .limitFields()
+        .paginate()
+
+    eventsData = JSON.parse(JSON.stringify(await eventsData.query))
+
+    const docsCount = await Event.countDocuments(allEventsData.query)
+
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data: eventsData,
+        docsCount,
+    })
+})
+
 const getAllFollowingEvents = catchAsync(async (req, res, next) => {
     const { id: userId } = req.user
 
@@ -123,11 +156,13 @@ const createEvent = catchAsync(async (req, res, next) => {
         )
     }
 
+    // const expiredTimeInSeconds = new Date(date) - Date.now()
     const data = await Event.create({
         createdBy: userId,
         date,
         description,
         name,
+        expireAt: new Date(date),
     })
 
     res.status(StatusCodes.CREATED).json({
@@ -168,7 +203,7 @@ const updateEvent = catchAsync(async (req, res, next) => {
 
     const data = await Event.findOneAndUpdate(
         { _id: eventId, createdBy: userId },
-        { name, description, date },
+        { name, description, date, expireAt: new Date(date) },
         {
             new: true,
             runValidators: true,
@@ -244,6 +279,7 @@ const deleteEventById = catchAsync(async (req, res, next) => {
 module.exports = {
     getAllEvents,
     getEvent,
+    getMyEvents,
     createEvent,
     deleteEvent,
     deleteEventById,
