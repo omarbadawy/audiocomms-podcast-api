@@ -156,7 +156,19 @@ const createEvent = catchAsync(async (req, res, next) => {
         )
     }
 
-    // const expiredTimeInSeconds = new Date(date) - Date.now()
+    const isDateAfterTwoWeeks = () => {
+        return new Date(Date.now() + 1209600000) < new Date(date)
+    }
+
+    if (isDateAfterTwoWeeks(date)) {
+        return next(
+            new AppError(
+                'Please, Enter date not after 2 weeks',
+                StatusCodes.BAD_REQUEST
+            )
+        )
+    }
+
     const data = await Event.create({
         createdBy: userId,
         date,
@@ -187,6 +199,19 @@ const updateEvent = catchAsync(async (req, res, next) => {
         return next(
             new AppError(
                 'Please, check the date or the date is gone',
+                StatusCodes.BAD_REQUEST
+            )
+        )
+    }
+
+    const isDateAfterTwoWeeks = () => {
+        return new Date(Date.now() + 1209600000) < new Date(date)
+    }
+
+    if (isDateAfterTwoWeeks(date)) {
+        return next(
+            new AppError(
+                'Please, Enter date not after 2 weeks',
                 StatusCodes.BAD_REQUEST
             )
         )
