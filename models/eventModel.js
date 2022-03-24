@@ -24,14 +24,14 @@ const eventSchema = new mongoose.Schema(
             ref: 'User',
             required: [true, 'Please, provide the user ID'],
         },
+        expireAt: {
+            type: Date,
+            default: Date.now,
+        },
     },
     { timestamps: true }
 )
-
+eventSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 })
 eventSchema.index({ name: 'text' })
-
-// eventSchema.methods.isDateAfterNow = function () {
-//     return new Date(Date.now()) < new Date(this.date)
-// }
 
 module.exports = mongoose.model('Event', eventSchema)
