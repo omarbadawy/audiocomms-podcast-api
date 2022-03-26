@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema(
             ],
             trim: true,
             unique: true,
+            validate: [validator.isAlphanumeric, 'Name must be alphanumeric'],
         },
         email: {
             type: String,
@@ -96,6 +97,7 @@ const userSchema = new mongoose.Schema(
                 150,
                 'A user bio must have less or equal than 150 characters',
             ],
+            default: 'Hello There!',
         },
         password: {
             type: String,
