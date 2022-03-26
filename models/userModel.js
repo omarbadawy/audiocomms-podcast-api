@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema(
             ],
             trim: true,
             unique: true,
+            validate: [validator.isAlphanumeric, 'Name must be alphanumeric'],
         },
         email: {
             type: String,
