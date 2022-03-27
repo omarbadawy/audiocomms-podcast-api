@@ -193,7 +193,7 @@ exports.getUnfollowedUsers = catchAsync(async (req, res, next) => {
         { following: 1, _id: 0 }
     )
 
-    const usersIds = []
+    const usersIds = [req.user.id]
 
     if (followedUsers) {
         followedUsers.forEach((user) => usersIds.push(user.following))
