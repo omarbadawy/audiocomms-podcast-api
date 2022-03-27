@@ -81,6 +81,11 @@ exports.getUserFollowing = catchAsync(async (req, res, next) => {
 })
 
 exports.followUser = catchAsync(async (req, res, next) => {
+    if (req.user.id === req.params.id) {
+        return next(
+            new AppError("you can't follow yourself", StatusCodes.BAD_REQUEST)
+        )
+    }
     const followExists = await Follow.findOne({
         follower: req.user.id,
         following: req.params.id,
