@@ -143,21 +143,24 @@ const createEvent = catchAsync(async (req, res, next) => {
     // try {
     const { date, description, name } = req.body
     const { id: userId } = req.user
+
     const isDateAfterNow = () => {
         return new Date(Date.now()) < new Date(date)
     }
+    const isDateAfterTwoWeeks = () => {
+        return new Date(Date.now() + 1209600000) < new Date(date)
+    }
 
-    if (!date || !isDateAfterNow(date)) {
+    if (!date) {
         return next(
-            new AppError(
-                'Please, check the date or the date is gone',
-                StatusCodes.BAD_REQUEST
-            )
+            new AppError('Please, check the date', StatusCodes.BAD_REQUEST)
         )
     }
 
-    const isDateAfterTwoWeeks = () => {
-        return new Date(Date.now() + 1209600000) < new Date(date)
+    if (!isDateAfterNow(date)) {
+        return next(
+            new AppError('Please,the date is gone', StatusCodes.BAD_REQUEST)
+        )
     }
 
     if (isDateAfterTwoWeeks(date)) {
@@ -191,23 +194,25 @@ const updateEvent = catchAsync(async (req, res, next) => {
     const { id: eventId } = req.params
     const { id: userId } = req.user
     const { name, description, date } = req.body
+
     const isDateAfterNow = () => {
         return new Date(Date.now()) < new Date(date)
     }
-
-    if (!date || !isDateAfterNow(date)) {
-        return next(
-            new AppError(
-                'Please, check the date or the date is gone',
-                StatusCodes.BAD_REQUEST
-            )
-        )
-    }
-
     const isDateAfterTwoWeeks = () => {
         return new Date(Date.now() + 1209600000) < new Date(date)
     }
 
+    if (!date) {
+        return next(
+            new AppError('Please, check the date', StatusCodes.BAD_REQUEST)
+        )
+    }
+
+    if (!isDateAfterNow(date)) {
+        return next(
+            new AppError('Please,the date is gone', StatusCodes.BAD_REQUEST)
+        )
+    }
     if (isDateAfterTwoWeeks(date)) {
         return next(
             new AppError(
