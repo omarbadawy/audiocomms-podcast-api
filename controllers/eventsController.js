@@ -151,9 +151,12 @@ const createEvent = catchAsync(async (req, res, next) => {
         return new Date(Date.now() + 1209600000) < new Date(date)
     }
 
-    if (!date) {
+    if (!date || !Date.parse(date)) {
         return next(
-            new AppError('Please, check the date', StatusCodes.BAD_REQUEST)
+            new AppError(
+                'Please, check the date or Invalid date',
+                StatusCodes.BAD_REQUEST
+            )
         )
     }
 
@@ -174,7 +177,7 @@ const createEvent = catchAsync(async (req, res, next) => {
 
     const data = await Event.create({
         createdBy: userId,
-        date,
+        date: new Date(date),
         description,
         name,
         expireAt: new Date(date),
@@ -202,9 +205,12 @@ const updateEvent = catchAsync(async (req, res, next) => {
         return new Date(Date.now() + 1209600000) < new Date(date)
     }
 
-    if (!date) {
+    if (!date || !Date.parse(date)) {
         return next(
-            new AppError('Please, check the date', StatusCodes.BAD_REQUEST)
+            new AppError(
+                'Please, check the date or Invalid date',
+                StatusCodes.BAD_REQUEST
+            )
         )
     }
 
@@ -233,7 +239,7 @@ const updateEvent = catchAsync(async (req, res, next) => {
 
     const data = await Event.findOneAndUpdate(
         { _id: eventId, createdBy: userId },
-        { name, description, date, expireAt: new Date(date) },
+        { name, description, date: new Date(date), expireAt: new Date(date) },
         {
             new: true,
             runValidators: true,
