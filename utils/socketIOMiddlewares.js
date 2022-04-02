@@ -62,6 +62,12 @@ exports.socketIOHandler = function (io) {
         socket.on('createRoom', async (roomData) => {
             const { name, category, status } = roomData
 
+            const userRooms = Array.from(socket.rooms)
+            if (userRooms.length > 1) {
+                io.to(socket.id).emit('errorMessage', 'already in room')
+                return
+            }
+
             if (!name || !category || !status) {
                 io.to(socket.id).emit(
                     'errorMessage',
@@ -171,9 +177,16 @@ exports.socketIOHandler = function (io) {
                     }
                 )
 
+                const token = generateRTC(socket.user.roomName, false)
+
                 socket.user.roomName = room.name
                 socket.join(room.name)
-                io.to(socket.id).emit('joinRoomSuccess', socket.user, room)
+                io.to(socket.id).emit(
+                    'joinRoomSuccess',
+                    socket.user,
+                    room,
+                    token
+                )
 
                 socket.to(room.name).emit('userJoined', socket.user)
             }
