@@ -12,7 +12,7 @@ exports.getAllRooms = catchAsync(async (req, res, next) => {
         req.query.status = 'public'
     }
 
-    req.query.isActivated = false
+    req.query.isActivated = true
 
     const featuresBeforePagination = new APIFeatures(
         Room.find({ status: 'public' }),
