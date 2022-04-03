@@ -1,5 +1,5 @@
 # Audio communications and podcast platform API
-It's a simple api for making audio communication app based on websockets and podcast platform api.
+It's a simple api for making audio communication apps based on websockets and AgoraRTC and a podcast platform api.
 
 ## Documentation
 https://documenter.getpostman.com/view/13585955/UVkvHXpj
