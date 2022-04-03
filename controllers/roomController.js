@@ -101,5 +101,38 @@ exports.searchRoom = catchAsync(async (req, res, next) => {
     res.status(StatusCodes.OK).json({ status: 'success', data })
 })
 
-exports.getRoom = factory.getOne(Room)
+exports.getRoom = catchAsync(async (req, res, next) => {
+    const { id: roomId } = req.params
+
+    if (!roomId) {
+        return next(
+            new AppError('Please, check room id param', StatusCodes.BAD_REQUEST)
+        )
+    }
+
+    let data = await Room.findOne({
+        _id: roomId,
+    })
+        .populate({
+            path: 'admin',
+            select: 'name photo',
+        })
+        .populate({
+            path: 'audience',
+            select: 'name photo',
+        })
+        .populate({
+            path: 'brodcasters',
+            select: 'name photo',
+        })
+
+    if (!data) {
+        return next(new AppError('Not found', StatusCodes.NOT_FOUND))
+    }
+    res.status(StatusCodes.OK).json({
+        status: 'success',
+        data,
+    })
+})
+
 exports.deleteRoom = factory.deleteOne(Room)
