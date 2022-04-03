@@ -138,39 +138,40 @@ exports.updateMe = catchAsync(async (req, res, next) => {
 })
 
 exports.updateMyPhoto = catchAsync(async (req, res, next) => {
-    if (req.file) {
-        const uploadImageToCloudinary = (req) => {
-            return new Promise(async (resolve, reject) => {
-                const bufferToStream = (buffer) => {
-                    const readable = new Readable({
-                        read() {
-                            this.push(buffer)
-                            this.push(null)
-                        },
-                    })
-                    return readable
-                }
-
-                const data = await sharp(req.file.buffer)
-                    .webp({ quality: 20 })
-                    .toBuffer()
-                const stream = uploader.upload_stream(
-                    { folder: 'userPhotos' },
-                    (error, result) => {
-                        if (error) reject(error)
-                        else {
-                            resolve(result)
-                        }
-                    }
-                )
-                bufferToStream(data).pipe(stream)
-            })
-        }
-
-        const photoData = await uploadImageToCloudinary(req)
-        req.body.photo = photoData.secure_url
+    if (!req.file) {
+        return next(new AppError('Please, provide the photo', 400))
     }
 
+    const uploadImageToCloudinary = (req) => {
+        return new Promise(async (resolve, reject) => {
+            const bufferToStream = (buffer) => {
+                const readable = new Readable({
+                    read() {
+                        this.push(buffer)
+                        this.push(null)
+                    },
+                })
+                return readable
+            }
+
+            const data = await sharp(req.file.buffer)
+                .webp({ quality: 20 })
+                .toBuffer()
+            const stream = uploader.upload_stream(
+                { folder: 'userPhotos' },
+                (error, result) => {
+                    if (error) reject(error)
+                    else {
+                        resolve(result)
+                    }
+                }
+            )
+            bufferToStream(data).pipe(stream)
+        })
+    }
+
+    const photoData = await uploadImageToCloudinary(req)
+    req.body.photo = photoData.secure_url
     const updatedUser = await User.findByIdAndUpdate(
         req.user.id,
         {
