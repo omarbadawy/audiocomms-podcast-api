@@ -176,6 +176,18 @@ exports.socketIOHandler = function (io) {
                         runValidators: true,
                     }
                 )
+                    .populate({
+                        path: 'admin',
+                        select: 'name photo',
+                    })
+                    .populate({
+                        path: 'audience',
+                        select: 'name photo',
+                    })
+                    .populate({
+                        path: 'brodcasters',
+                        select: 'name photo',
+                    })
 
                 const token = generateRTC(socket.user.roomName, false)
 
