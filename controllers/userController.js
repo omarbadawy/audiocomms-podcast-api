@@ -109,6 +109,35 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         )
     }
 
+    // filtered out unwanted feild names
+    const filteredBody = filterObj(
+        req.body,
+        'name',
+        'email',
+        'language',
+        'country',
+        'userType',
+        'bio'
+    )
+
+    //Update user document
+    const updatedUser = await User.findByIdAndUpdate(
+        req.user.id,
+        filteredBody,
+        {
+            new: true,
+            runValidators: true,
+        }
+    ).select('+email -active')
+
+    // send the response
+    res.status(200).json({
+        status: 'success',
+        user: updatedUser,
+    })
+})
+
+exports.updateMyPhoto = catchAsync(async (req, res, next) => {
     if (req.file) {
         const uploadImageToCloudinary = (req) => {
             return new Promise(async (resolve, reject) => {
@@ -142,30 +171,18 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         req.body.photo = photoData.secure_url
     }
 
-    // filtered out unwanted feild names
-    const filteredBody = filterObj(
-        req.body,
-        'name',
-        'email',
-        'language',
-        'country',
-        'userType',
-        'photo',
-        'bio'
-    )
-
-    //Update user document
     const updatedUser = await User.findByIdAndUpdate(
         req.user.id,
-        filteredBody,
+        {
+            photo: req.body.photo,
+        },
         {
             new: true,
             runValidators: true,
         }
     ).select('+email -active')
 
-    // send the response
-    res.status(200).json({
+    return res.status(200).json({
         status: 'success',
         user: updatedUser,
     })
