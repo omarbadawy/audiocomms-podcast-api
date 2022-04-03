@@ -8,20 +8,32 @@ const storage = multer.memoryStorage()
 
 const multerFilter = (req, file, cb) => {
     if (file.mimetype.startsWith('image')) {
-    const supportedFormats = ["jpeg", "png", "webp", "avif", "tiff", "gif",  "svg"];
-    const isSupportedImageFormat = (img) => {
-        return supportedFormats.some((format) => img.mimetype.split('/')[1] === format);
-    }
-    if (!isSupportedImageFormat(file)) {
-        cb(
-            new AppError(`Unsupported image format. please provide image with this formats ${supportedFormats.join(' , ')}`,
-                StatusCodes.BAD_REQUEST
+        const supportedFormats = [
+            'jpeg',
+            'png',
+            'webp',
+            'avif',
+            'tiff',
+            'gif',
+            'svg',
+        ]
+        const isSupportedImageFormat = (img) => {
+            return supportedFormats.some(
+                (format) => img.mimetype.split('/')[1] === format
             )
-        )
-    }
+        }
+        if (!isSupportedImageFormat(file)) {
+            cb(
+                new AppError(
+                    `Unsupported image format. please provide image with this formats ${supportedFormats.join(
+                        ' , '
+                    )}`,
+                    StatusCodes.BAD_REQUEST
+                )
+            )
+        }
         cb(null, true)
-    }
-    else {
+    } else {
         cb(
             new AppError(
                 'Not an image, Please upload only images',
