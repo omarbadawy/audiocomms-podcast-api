@@ -71,7 +71,7 @@ module.exports = (err, req, res, next) => {
         error.message = err.message
         if (error.kind === 'ObjectId') error = handleCastErrorDB(error)
         if (error.code === 11000) error = handleDuplicateFieldsDB(error)
-        if (error.message.includes('validation failed'))
+        if (error.message.toLocaleLowerCase().includes('validation failed'))
             error = handleValidationErrorDB(error)
         if (error.name === 'JsonWebTokenError') error = handleJWTError()
         if (error.name === 'TokenExpiredError') error = handleJWTExpiredError()
