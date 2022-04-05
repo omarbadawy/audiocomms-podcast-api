@@ -403,6 +403,29 @@ exports.socketIOHandler = function (io) {
             io.to(user.socketId).emit('audienceToken', token)
         })
 
+        socket.on('endRoom', async () => {
+            const existingRoom = await Room.findOne({
+                name: socket.user.roomName,
+            })
+            if (existingRoom) {
+                if (
+                    socket.user.id.toString() === existingRoom.admin.toString()
+                ) {
+                    io.to(existingRoom.name).emit('roomEnded')
+                    io.in(socket.user.roomName).disconnectSockets(true)
+                    try {
+                        const foundRoom = await Room.findOneAndDelete({
+                            name: socket.user.roomName,
+                        })
+
+                        console.log('foundRoom', foundRoom)
+                    } catch (err) {
+                        console.log(err)
+                    }
+                }
+            }
+        })
+
         socket.on('disconnecting', async () => {
             const existingRoom = await Room.findOne({
                 name: socket.user.roomName,
@@ -419,12 +442,13 @@ exports.socketIOHandler = function (io) {
                             isActivated: false,
                         }
                     )
+                    io.to(existingRoom.name).emit('adminLeft')
                     setTimeout(async () => {
                         const roomStatus = await Room.findById(
                             existingRoom._id
                         ).select('isActivated')
                         if (!roomStatus.isActivated) {
-                            io.to(existingRoom.name).emit('adminLeft')
+                            io.to(existingRoom.name).emit('roomEnded')
                             clearTimeout(socket.timerId)
                             io.in(socket.user.roomName).disconnectSockets(true)
                             try {
