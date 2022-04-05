@@ -6,7 +6,7 @@ const eventSchema = new mongoose.Schema(
             type: String,
             trim: true,
             unique: true,
-            required: [true, 'Please, provide the podcast name'],
+            required: [true, 'Please, provide the event name'],
             minLength: [5, 'Please, name must be more than 5 characters'],
             maxLength: [60, 'Please, name must be less than 60 characters'],
         },

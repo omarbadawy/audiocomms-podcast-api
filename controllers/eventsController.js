@@ -139,6 +139,7 @@ const getEvent = catchAsync(async (req, res, next) => {
     //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
     // }
 })
+
 const createEvent = catchAsync(async (req, res, next) => {
     // try {
     const { date, description, name } = req.body
@@ -162,7 +163,7 @@ const createEvent = catchAsync(async (req, res, next) => {
 
     if (!isDateAfterNow(date)) {
         return next(
-            new AppError('Please,the date is gone', StatusCodes.BAD_REQUEST)
+            new AppError('Please, the date is gone', StatusCodes.BAD_REQUEST)
         )
     }
 
@@ -197,6 +198,10 @@ const updateEvent = catchAsync(async (req, res, next) => {
     const { id: eventId } = req.params
     const { id: userId } = req.user
     const { name, description, date } = req.body
+    const updatedObj = {}
+
+    if (name) updatedObj.name = name
+    if (description) updatedObj.description = description
 
     const isDateAfterNow = () => {
         return new Date(Date.now()) < new Date(date)
@@ -205,27 +210,35 @@ const updateEvent = catchAsync(async (req, res, next) => {
         return new Date(Date.now() + 1209600000) < new Date(date)
     }
 
-    if (!date || !Date.parse(date)) {
-        return next(
-            new AppError(
-                'Please, check the date or Invalid date',
-                StatusCodes.BAD_REQUEST
+    if (date) {
+        if (!date || !Date.parse(date)) {
+            return next(
+                new AppError(
+                    'Please, check the date or Invalid date',
+                    StatusCodes.BAD_REQUEST
+                )
             )
-        )
-    }
+        }
 
-    if (!isDateAfterNow(date)) {
-        return next(
-            new AppError('Please,the date is gone', StatusCodes.BAD_REQUEST)
-        )
-    }
-    if (isDateAfterTwoWeeks(date)) {
-        return next(
-            new AppError(
-                'Please, Enter date not after 2 weeks',
-                StatusCodes.BAD_REQUEST
+        if (!isDateAfterNow(date)) {
+            return next(
+                new AppError(
+                    'Please, the date is gone',
+                    StatusCodes.BAD_REQUEST
+                )
             )
-        )
+        }
+        if (isDateAfterTwoWeeks(date)) {
+            return next(
+                new AppError(
+                    'Please, Enter date not after 2 weeks',
+                    StatusCodes.BAD_REQUEST
+                )
+            )
+        }
+
+        updatedObj['date'] = new Date(date)
+        updatedObj['expireAt'] = new Date(date)
     }
 
     if (!eventId) {
@@ -239,7 +252,7 @@ const updateEvent = catchAsync(async (req, res, next) => {
 
     const data = await Event.findOneAndUpdate(
         { _id: eventId, createdBy: userId },
-        { name, description, date: new Date(date), expireAt: new Date(date) },
+        updatedObj,
         {
             new: true,
             runValidators: true,
