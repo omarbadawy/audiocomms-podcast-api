@@ -40,6 +40,7 @@ exports.socketAuthMiddleware = async (socket, next) => {
             id: currentUser._id,
             name: currentUser.name,
             photo: currentUser.photo,
+            _id: currentUser._id,
         }
 
         next()
