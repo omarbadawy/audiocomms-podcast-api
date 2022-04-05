@@ -448,7 +448,7 @@ exports.socketIOHandler = function (io) {
                         const roomStatus = await Room.findById(
                             existingRoom._id
                         ).select('isActivated')
-                        if (!roomStatus || !roomStatus.isActivated) {
+                        if (!roomStatus && !roomStatus.isActivated) {
                             io.to(existingRoom.name).emit('roomEnded')
                             clearTimeout(socket.timerId)
                             io.in(socket.user.roomName).disconnectSockets(true)
