@@ -189,9 +189,10 @@ exports.socketIOHandler = function (io) {
                         select: 'name photo',
                     })
 
+                socket.user.roomName = room.name
+
                 const token = generateRTC(socket.user.roomName, false)
 
-                socket.user.roomName = room.name
                 socket.join(room.name)
                 io.to(socket.id).emit(
                     'joinRoomSuccess',
