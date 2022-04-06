@@ -50,25 +50,6 @@ exports.getAllRooms = catchAsync(async (req, res, next) => {
     })
 })
 
-exports.generateAgoraToken = catchAsync(async (req, res, next) => {
-    const { channel } = req.query
-    // let uid = req.body.uid;
-
-    if (!channel) {
-        return res.status(400).json({ msg: 'Please, provide channel ' })
-    }
-
-    const token = generateRTC(channel, false)
-
-    if (!token) {
-        return next(new AppError('Token generation Error!', 400))
-    }
-
-    res.status(200).json({
-        status: 'success',
-        token,
-    })
-})
 
 exports.searchRoom = catchAsync(async (req, res, next) => {
     const { s } = req.query
