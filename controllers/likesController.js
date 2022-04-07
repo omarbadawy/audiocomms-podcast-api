@@ -53,7 +53,6 @@ const getMyLikes = catchAsync(async (req, res, next) => {
     })
 })
 const getPodcastLikes = catchAsync(async (req, res, next) => {
-    // try {
     const { id: userId } = req.user
     const { id: podcastId } = req.params
 
@@ -97,12 +96,8 @@ const getPodcastLikes = catchAsync(async (req, res, next) => {
         data: query,
         docsCount,
     })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 const addLike = catchAsync(async (req, res, next) => {
-    // try {
     const { id: podcastId } = req.params
     const { id: userId } = req.user
 
@@ -142,12 +137,8 @@ const addLike = catchAsync(async (req, res, next) => {
         status: 'success',
         message: 'Like is added',
     })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 const removeLike = catchAsync(async (req, res, next) => {
-    // try {
     const { id: podcastId } = req.params
     const { id: userId } = req.user
     if (!podcastId) {
@@ -172,13 +163,9 @@ const removeLike = catchAsync(async (req, res, next) => {
         status: 'success',
         message: 'Like is removed',
     })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 
 const removeLikeByPodcastId = catchAsync(async (req, res, next) => {
-    // try {
     const { id: podcastId } = req.params
     if (!podcastId) {
         return next(
@@ -202,9 +189,6 @@ const removeLikeByPodcastId = catchAsync(async (req, res, next) => {
         status: 'success',
         message: 'Like is removed',
     })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 
 module.exports = {

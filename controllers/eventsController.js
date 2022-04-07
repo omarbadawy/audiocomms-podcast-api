@@ -109,8 +109,6 @@ const getAllFollowingEvents = catchAsync(async (req, res, next) => {
     })
 })
 const getEvent = catchAsync(async (req, res, next) => {
-    // try {
-    // const { id: userId } = req.user
     const { id: eventId } = req.params
 
     if (!eventId) {
@@ -135,13 +133,9 @@ const getEvent = catchAsync(async (req, res, next) => {
         status: 'success',
         data,
     })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 
 const createEvent = catchAsync(async (req, res, next) => {
-    // try {
     const { date, description, name } = req.body
     const { id: userId } = req.user
 
@@ -188,13 +182,9 @@ const createEvent = catchAsync(async (req, res, next) => {
         status: 'success',
         data,
     })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 
 const updateEvent = catchAsync(async (req, res, next) => {
-    // try {
     const { id: eventId } = req.params
     const { id: userId } = req.user
     const { name, description, date } = req.body
@@ -262,12 +252,8 @@ const updateEvent = catchAsync(async (req, res, next) => {
         return next(new AppError('Not found', StatusCodes.NOT_FOUND))
     }
     res.status(StatusCodes.OK).json({ status: 'success', data })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 const deleteEvent = catchAsync(async (req, res, next) => {
-    // try {
     const { id: eventId } = req.params
     const { id: userId } = req.user
     if (!eventId) {
@@ -292,13 +278,9 @@ const deleteEvent = catchAsync(async (req, res, next) => {
         status: 'success',
         message: 'Event is removed',
     })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 
 const deleteEventById = catchAsync(async (req, res, next) => {
-    // try {
     const { id: eventId } = req.params
     if (!eventId) {
         return next(
@@ -320,9 +302,6 @@ const deleteEventById = catchAsync(async (req, res, next) => {
         status: 'success',
         message: 'Event is removed',
     })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 
 module.exports = {

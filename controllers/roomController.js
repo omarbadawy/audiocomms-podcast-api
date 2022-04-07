@@ -25,7 +25,6 @@ exports.getAllRooms = catchAsync(async (req, res, next) => {
         .limitFields()
         .paginate()
 
-    // const docs = await features.query.explain()
     let rooms = await features.query
         .populate({
             path: 'admin',
@@ -49,7 +48,6 @@ exports.getAllRooms = catchAsync(async (req, res, next) => {
         data: rooms,
     })
 })
-
 
 exports.searchRoom = catchAsync(async (req, res, next) => {
     const { s } = req.query
