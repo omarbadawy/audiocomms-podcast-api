@@ -278,7 +278,8 @@ exports.socketIOHandler = function (io) {
                 !user.id ||
                 !user.socketId ||
                 !user.roomName ||
-                !user.photo
+                !user.photo ||
+                !user.uid
             ) {
                 io.to(socket.id).emit('errorMessage', 'user info not complete')
                 return
@@ -313,6 +314,15 @@ exports.socketIOHandler = function (io) {
                 )
                 return
             }
+
+            const userData = await User.findById(user.id).select('uid')
+
+            if (!userData) {
+                io.to(socket.id).emit('errorMessage', `User not found`)
+                return
+            }
+
+            user.uid = userData.uid
 
             await Room.updateOne(
                 { _id },
@@ -375,7 +385,8 @@ exports.socketIOHandler = function (io) {
                 !user.id ||
                 !user.socketId ||
                 !user.roomName ||
-                !user.photo
+                !user.photo ||
+                !user.uid
             ) {
                 io.to(socket.id).emit('errorMessage', 'user info not complete')
                 return
@@ -411,6 +422,15 @@ exports.socketIOHandler = function (io) {
                 )
                 return
             }
+
+            const userData = await User.findById(user.id).select('uid')
+
+            if (!userData) {
+                io.to(socket.id).emit('errorMessage', `User not found`)
+                return
+            }
+
+            user.uid = userData.uid
 
             await Room.updateOne(
                 { _id },
