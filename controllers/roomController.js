@@ -28,15 +28,15 @@ exports.getAllRooms = catchAsync(async (req, res, next) => {
     let rooms = await features.query
         .populate({
             path: 'admin',
-            select: 'name photo',
+            select: 'name photo uid',
         })
         .populate({
             path: 'audience',
-            select: 'name photo',
+            select: 'name photo uid',
         })
         .populate({
             path: 'brodcasters',
-            select: 'name photo',
+            select: 'name photo uid',
         })
 
     const docsCount = await Room.countDocuments(featuresBeforePagination.query)
@@ -94,15 +94,15 @@ exports.getRoom = catchAsync(async (req, res, next) => {
     })
         .populate({
             path: 'admin',
-            select: 'name photo',
+            select: 'name photo uid',
         })
         .populate({
             path: 'audience',
-            select: 'name photo',
+            select: 'name photo uid',
         })
         .populate({
             path: 'brodcasters',
-            select: 'name photo',
+            select: 'name photo uid',
         })
 
     if (!data) {
