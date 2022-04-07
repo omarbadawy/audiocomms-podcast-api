@@ -6,6 +6,8 @@ const catchAsync = require('./../utils/catchAsync')
 const AppError = require('./../utils/appError')
 const Email = require('../utils/email')
 
+const stringToHashCode = require('../utils/stringToHashCode')
+
 const signToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN,
@@ -39,6 +41,10 @@ exports.signup = catchAsync(async (req, res, next) => {
         language: req.body.language,
         userType: req.body.userType,
     })
+
+    uid = stringToHashCode(newUser.name)
+    // console.log(newUser.name, uid)
+    await User.updateOne({ _id: newUser._id }, { uid })
 
     createSendToken(newUser, 201, res)
 })
