@@ -169,7 +169,6 @@ const getAllPodcastsWithoutMe = catchAsync(async (req, res, next) => {
 })
 
 const getPodcast = catchAsync(async (req, res, next) => {
-    // try {
     const { id: podcastId } = req.params
     const { id: userId } = req.user
 
@@ -201,9 +200,6 @@ const getPodcast = catchAsync(async (req, res, next) => {
         status: 'success',
         data,
     })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 
 const createPodcast = catchAsync(async (req, res, next) => {
@@ -217,13 +213,7 @@ const createPodcast = catchAsync(async (req, res, next) => {
             )
         )
     }
-    // const audioTypes = ['wav', 'mp3', 'mp4', 'wma', 'flac', 'm4a']
-    // const isAudio = (audio) => {
-    //     return (
-    //         audioTypes.some((suffix) => audio.format.endsWith(suffix)) &&
-    //         audio.is_audio
-    //     )
-    // }
+
     const fileResource = await api.resource(
         audio.public_id,
         {
@@ -277,7 +267,6 @@ const createPodcast = catchAsync(async (req, res, next) => {
 })
 
 const updatePodcast = catchAsync(async (req, res, next) => {
-    // try {
     const { id: podcastId } = req.params
     const { id: userId } = req.user
     const { category, name } = req.body
@@ -321,13 +310,9 @@ const updatePodcast = catchAsync(async (req, res, next) => {
         return next(new AppError('Not found', StatusCodes.NOT_FOUND))
     }
     res.status(StatusCodes.OK).json({ status: 'success', data })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 
 const deletePodcast = catchAsync(async (req, res, next) => {
-    // try {
     const { id: PodcastId } = req.params
     const { id: userId } = req.user
     if (!PodcastId) {
@@ -357,13 +342,9 @@ const deletePodcast = catchAsync(async (req, res, next) => {
         status: 'success',
         message: 'Podcast is deleted',
     })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 
 const deletePodcastById = catchAsync(async (req, res, next) => {
-    // try {
     const { id: podcastId } = req.params
     if (!podcastId) {
         return next(
@@ -391,9 +372,6 @@ const deletePodcastById = catchAsync(async (req, res, next) => {
         status: 'success',
         message: 'Podcast is deleted',
     })
-    // } catch (error) {
-    //     next(new AppError(error.message, StatusCodes.BAD_REQUEST))
-    // }
 })
 
 const getMyFollowingPodcasts = catchAsync(async (req, res, next) => {

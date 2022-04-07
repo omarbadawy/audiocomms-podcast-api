@@ -41,4 +41,5 @@ const podcastSchema = new mongoose.Schema(
 )
 
 podcastSchema.index({ name: 'text' })
+podcastSchema.index({ createdBy: 1 })
 module.exports = mongoose.model('Podcast', podcastSchema)
