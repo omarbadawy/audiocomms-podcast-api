@@ -97,6 +97,7 @@ exports.socketIOHandler = function (io) {
                     status,
                     isActivated: true,
                 })
+                console.log(`Room ${room.name} created`)
 
                 socket.join(room.name)
                 socket.timerId = setTimeout(async () => {
@@ -121,12 +122,15 @@ exports.socketIOHandler = function (io) {
                 if (error.kind === 'ObjectId')
                     message = `Invalid ${error.path}: ${error.value}`
 
+                if (error.message.toLowerCase().includes('agora')) {
+                    message = 'agora token failed'
+                }
                 if (error.code === 11000)
                     message = `Duplicate field value: ${JSON.stringify(
                         error.keyValue
                     )}. Please use another value`
 
-                if (error.message.includes('validation failed')) {
+                if (error.message.toLowerCase().includes('validation failed')) {
                     const errors = Object.values(error.errors).map(
                         (el) => el.message
                     )
@@ -139,7 +143,6 @@ exports.socketIOHandler = function (io) {
         })
 
         socket.on('joinRoom', async (roomName) => {
-            console.log('length Of the array: ' + acknowledged.length)
             if (!~acknowledged.indexOf(socket.user.id)) {
                 acknowledged.push(socket.user.id)
 
@@ -163,8 +166,6 @@ exports.socketIOHandler = function (io) {
 
                         return
                     }
-
-                    console.log('socket user id', socket.user.id)
 
                     if (
                         existingRoom.audience.includes(
@@ -210,7 +211,9 @@ exports.socketIOHandler = function (io) {
 
                     const token = generateRTC(socket.user, false)
 
-                    console.log('user JOINED this room', socket.user)
+                    console.log(
+                        `${socket.user.name} Joined ${socket.user.roomName}`
+                    )
 
                     socket.join(room.name)
                     io.to(socket.id).emit(
@@ -223,7 +226,10 @@ exports.socketIOHandler = function (io) {
                     socket.to(room.name).emit('userJoined', socket.user)
                 }
             } else {
-                io.to(socket.id).emit('errorMessage', 'MOTHER FUCKER!!!')
+                io.to(socket.id).emit(
+                    'errorMessage',
+                    "can't join more than one room"
+                )
             }
         })
 
@@ -433,14 +439,13 @@ exports.socketIOHandler = function (io) {
                 if (
                     socket.user.id.toString() === existingRoom.admin.toString()
                 ) {
+                    console.log(`room ${existingRoom.name} Ended`)
                     io.to(existingRoom.name).emit('roomEnded')
                     io.in(socket.user.roomName).disconnectSockets(true)
                     try {
                         const foundRoom = await Room.findOneAndDelete({
                             name: socket.user.roomName,
                         })
-
-                        console.log('foundRoom', foundRoom)
                     } catch (err) {
                         console.log(err)
                     }
@@ -455,9 +460,7 @@ exports.socketIOHandler = function (io) {
             const existingRoom = await Room.findOne({
                 name: socket.user.roomName,
             })
-            console.log('array length bitch', acknowledged.length)
-            console.log('user', socket.user)
-            console.log('room', existingRoom)
+            console.log(`user ${socket.user.name} disconnected`)
             if (existingRoom) {
                 if (
                     socket.user.id.toString() === existingRoom.admin.toString()
@@ -469,6 +472,9 @@ exports.socketIOHandler = function (io) {
                         }
                     )
                     io.to(existingRoom.name).emit('adminLeft')
+                    console.log(
+                        `admin ${socket.user.name} left room ${existingRoom.name}`
+                    )
                     setTimeout(async () => {
                         const roomStatus = await Room.findById(
                             existingRoom._id
@@ -481,8 +487,6 @@ exports.socketIOHandler = function (io) {
                                 const foundRoom = await Room.findOneAndDelete({
                                     name: socket.user.roomName,
                                 })
-
-                                console.log('foundRoom', foundRoom)
                             } catch (err) {
                                 console.log(err)
                             }
@@ -490,6 +494,9 @@ exports.socketIOHandler = function (io) {
                     }, 30000)
                 } else {
                     io.to(existingRoom.name).emit('userLeft', socket.user)
+                    console.log(
+                        `user ${socket.user.name} left room ${existingRoom.name}`
+                    )
                     await Room.updateOne(
                         { _id: existingRoom._id },
                         {
@@ -501,7 +508,6 @@ exports.socketIOHandler = function (io) {
                     )
                 }
             }
-            console.log('userLeft: ', socket.user.id)
         })
     }
 }
