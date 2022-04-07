@@ -37,5 +37,5 @@ const roomSchema = new mongoose.Schema(
 )
 
 roomSchema.index({ createdAt: 1 }, { expireAfterSeconds: 18000 })
-roomSchema.index({ name: 'text' })
+roomSchema.index({ name: 'text', name: 1 })
 module.exports = mongoose.model('Room', roomSchema)
