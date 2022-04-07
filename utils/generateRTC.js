@@ -1,6 +1,6 @@
 const Agora = require('agora-access-token')
 
-module.exports = (channel, isPublisher) => {
+module.exports = (user, isPublisher) => {
     const expiredTimeInSeconds = 18000
     const privilegeExpiredTs =
         Math.floor(Date.now() / 1000) + expiredTimeInSeconds
@@ -13,8 +13,8 @@ module.exports = (channel, isPublisher) => {
         const token = Agora.RtcTokenBuilder.buildTokenWithUid(
             process.env.APP_ID,
             process.env.APP_CERTIFICATE,
-            channel,
-            0,
+            user.roomName,
+            user.uid,
             userRole,
             privilegeExpiredTs
         )

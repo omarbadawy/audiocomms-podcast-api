@@ -41,6 +41,7 @@ exports.socketAuthMiddleware = async (socket, next) => {
             name: currentUser.name,
             photo: currentUser.photo,
             _id: currentUser._id,
+            uid: currentUser.uid,
         }
 
         next()
@@ -107,7 +108,7 @@ exports.socketIOHandler = function (io) {
                     }
                 }, 18000000)
                 socket.user.roomName = room.name
-                const token = generateRTC(socket.user.roomName, true)
+                const token = generateRTC(socket.user, true)
                 io.to(socket.id).emit(
                     'createRoomSuccess',
                     socket.user,
@@ -179,20 +180,20 @@ exports.socketIOHandler = function (io) {
                 )
                     .populate({
                         path: 'admin',
-                        select: 'name photo',
+                        select: 'name photo uid',
                     })
                     .populate({
                         path: 'audience',
-                        select: 'name photo',
+                        select: 'name photo uid',
                     })
                     .populate({
                         path: 'brodcasters',
-                        select: 'name photo',
+                        select: 'name photo uid',
                     })
 
                 socket.user.roomName = room.name
 
-                const token = generateRTC(socket.user.roomName, false)
+                const token = generateRTC(socket.user, false)
 
                 socket.join(room.name)
                 io.to(socket.id).emit(
@@ -300,7 +301,7 @@ exports.socketIOHandler = function (io) {
                 }
             )
 
-            const token = generateRTC(user.roomName, true)
+            const token = generateRTC(user, true)
 
             io.to(user.roomName).emit('userChangedToBrodcaster', user)
             io.to(user.socketId).emit('brodcasterToken', token)
@@ -331,7 +332,7 @@ exports.socketIOHandler = function (io) {
                     }
                 )
 
-                const token = generateRTC(socket.user.roomName, false)
+                const token = generateRTC(socket.user, false)
 
                 io.to(socket.user.roomName).emit(
                     'userChangedToAudience',
@@ -398,7 +399,7 @@ exports.socketIOHandler = function (io) {
                 }
             )
 
-            const token = generateRTC(user.roomName, false)
+            const token = generateRTC(user, false)
 
             io.to(user.roomName).emit('userChangedToAudience', user)
             io.to(user.socketId).emit('audienceToken', token)

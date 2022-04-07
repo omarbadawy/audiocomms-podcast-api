@@ -98,6 +98,10 @@ const userSchema = new mongoose.Schema(
             ],
             default: 'Hello There!',
         },
+        uid: {
+            type: Number,
+            default: Math.floor(Math.random() * 1000000) + 1,
+        },
         password: {
             type: String,
             required: [true, 'Please provide a password'],
