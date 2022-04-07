@@ -13,6 +13,8 @@ const { promisify } = require('util')
 const { Readable } = require('stream')
 const sharp = require('sharp')
 
+const stringToHashCode = require('../utils/stringToHashCode')
+
 const filterObj = (obj, ...allowedFeilds) => {
     const newObj = {}
     Object.keys(obj).forEach((el) => {
@@ -120,6 +122,10 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         'bio'
     )
 
+    if (filteredBody.name) {
+        filteredBody.uid = stringToHashCode(String(filteredBody.name))
+        // console.log(filteredBody.name, filteredBody.uid)
+    }
     //Update user document
     const updatedUser = await User.findByIdAndUpdate(
         req.user.id,

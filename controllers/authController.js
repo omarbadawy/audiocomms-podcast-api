@@ -42,7 +42,7 @@ exports.signup = catchAsync(async (req, res, next) => {
         userType: req.body.userType,
     })
 
-    uid = stringToHashCode(newUser.name)
+    const uid = stringToHashCode(newUser.name)
     // console.log(newUser.name, uid)
     await User.updateOne({ _id: newUser._id }, { uid })
 
