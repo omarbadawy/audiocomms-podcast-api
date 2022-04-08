@@ -144,7 +144,7 @@ exports.socketIOHandler = function (io) {
 
         socket.on('joinRoom', async (roomName) => {
             if (!~acknowledged.indexOf(socket.user.id)) {
-                acknowledged.push(socket.user.id)
+                acknowledged.unshift(socket.user.id)
 
                 if (acknowledged.length > 1000) {
                     acknowledged.length = 1000
