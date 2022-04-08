@@ -250,6 +250,18 @@ exports.socketIOHandler = function (io) {
                         runValidators: true,
                     }
                 )
+                    .populate({
+                        path: 'admin',
+                        select: 'name photo uid',
+                    })
+                    .populate({
+                        path: 'audience',
+                        select: 'name photo uid',
+                    })
+                    .populate({
+                        path: 'brodcasters',
+                        select: 'name photo uid',
+                    })
 
                 io.to(socket.id).emit(
                     'adminReJoinedRoomSuccess',
