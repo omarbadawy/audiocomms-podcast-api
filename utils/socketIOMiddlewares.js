@@ -237,9 +237,17 @@ exports.socketIOHandler = function (io) {
             const adminFoundInRoom = await Room.findOne({
                 admin: socket.user.id,
             })
+
+            console.log(
+                `${socket.user.name} tried to join ${socket.user.roomName} as admin`
+            )
+
             if (adminFoundInRoom && adminFoundInRoom.isActivated === false) {
                 socket.join(adminFoundInRoom.name)
                 socket.user.roomName = adminFoundInRoom.name
+                console.log(
+                    `Admin ${socket.user.name} Rejoin room ${socket.user.roomName}`
+                )
                 const room = await Room.findOneAndUpdate(
                     { name: adminFoundInRoom.name },
                     {
