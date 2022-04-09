@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const validator = require('validator')
 
 const roomSchema = new mongoose.Schema(
     {
@@ -7,8 +8,12 @@ const roomSchema = new mongoose.Schema(
             trim: true,
             unique: true,
             required: [true, 'Please, provide the podcast name'],
-            minLength: [5, 'Please, name must be more than 5 characters'],
+            minLength: [2, 'Please, name must be more than 2 characters'],
             maxLength: [60, 'Please, name must be less than 60 characters'],
+            validate: [
+                (v) => validator.isAlphanumeric(v, 'en-US', { ignore: ' ' }),
+                'Name must be en-US alphanumeric',
+            ],
         },
         category: {
             type: String,

@@ -96,7 +96,9 @@ exports.socketIOHandler = function (io) {
                     status,
                     isActivated: true,
                 })
-                console.log(`Room ${room.name} created`)
+                console.log(
+                    `user ${socket.user.name} created Room ${room.name}`
+                )
 
                 socket.join(room.name)
                 socket.timerId = setTimeout(async () => {
@@ -237,46 +239,57 @@ exports.socketIOHandler = function (io) {
                 admin: socket.user._id,
             })
 
-            if (adminFoundInRoom && adminFoundInRoom.isActivated === false) {
-                socket.join(adminFoundInRoom.name)
-                socket.user.roomName = adminFoundInRoom.name
-                console.log(
-                    `Admin ${socket.user.name} Rejoin room ${socket.user.roomName}`
-                )
-                const room = await Room.findOneAndUpdate(
-                    { name: adminFoundInRoom.name },
-                    {
-                        isActivated: true,
-                    },
-                    {
-                        new: true,
-                        runValidators: true,
-                    }
-                )
-                    .populate({
-                        path: 'admin',
-                        select: 'name photo uid',
-                    })
-                    .populate({
-                        path: 'audience',
-                        select: 'name photo uid',
-                    })
-                    .populate({
-                        path: 'brodcasters',
-                        select: 'name photo uid',
-                    })
-
-                const token = generateRTC(socket.user, true)
-
+            if (!adminFoundInRoom) {
                 io.to(socket.id).emit(
-                    'adminReJoinedRoomSuccess',
-                    socket.user,
-                    room,
-                    token
+                    'errorMessage',
+                    'No room found that you are admin in it'
                 )
-            } else {
-                io.to(socket.id).emit('errorMessage', "can't join room")
+                return
             }
+            const allSockets = await io.in(adminFoundInRoom.name).fetchSockets()
+            const userSocket = allSockets.find(
+                ({ user }) => user._id === socket.user._id
+            )
+
+            if (userSocket) {
+                console.log(
+                    'userSocket ' + userSocket.id + ' will leave the room'
+                )
+                userSocket.leave(adminFoundInRoom.name)
+            }
+
+            const room = await Room.findOne({ name: adminFoundInRoom.name })
+                .populate({
+                    path: 'admin',
+                    select: 'name photo uid',
+                })
+                .populate({
+                    path: 'audience',
+                    select: 'name photo uid',
+                })
+                .populate({
+                    path: 'brodcasters',
+                    select: 'name photo uid',
+                })
+
+            if (!room) {
+                io.to(socket.id).emit('errorMessage', 'No room found')
+                return
+            }
+
+            socket.user.roomName = adminFoundInRoom.name
+
+            const token = generateRTC(socket.user, true)
+
+            socket.join(socket.user.roomName)
+            console.log(`socket ${socket.user.roomName} joined the room again`)
+
+            io.to(socket.id).emit(
+                'adminReJoinedRoomSuccess',
+                socket.user,
+                room,
+                token
+            )
         })
 
         socket.on('askForPerms', () => {
@@ -291,14 +304,7 @@ exports.socketIOHandler = function (io) {
 
         socket.on('givePermsTo', async (user) => {
             // check if there is a user object
-            if (
-                !user ||
-                !user._id ||
-                !user.socketId ||
-                !user.roomName ||
-                !user.photo ||
-                !user.uid
-            ) {
+            if (!user || !user._id) {
                 io.to(socket.id).emit('errorMessage', 'user info not complete')
                 return
             }
@@ -342,7 +348,7 @@ exports.socketIOHandler = function (io) {
 
             user.uid = userData.uid
 
-            await Room.updateOne(
+            const room = await Room.findOneAndUpdate(
                 { _id },
                 {
                     $pull: {
@@ -352,13 +358,23 @@ exports.socketIOHandler = function (io) {
                     $push: {
                         brodcasters: user._id,
                     },
+                },
+                {
+                    new: true,
+                    runValidators: true,
                 }
             )
 
+            user.roomName = room.name
+
             const token = generateRTC(user, true)
 
-            io.to(user.roomName).emit('userChangedToBrodcaster', user)
-            io.to(user.socketId).emit('brodcasterToken', token)
+            const allSockets = await io.in(room.name).fetchSockets()
+            const userSocket = allSockets.find(({ user: userInSocket }) => {
+                return userInSocket._id.toString() === user._id.toString()
+            })
+            io.to(room.name).emit('userChangedToBrodcaster', userSocket.user)
+            io.to(userSocket.id).emit('brodcasterToken', token)
         })
 
         socket.on('weHaveToGoBack', async () => {
@@ -398,14 +414,7 @@ exports.socketIOHandler = function (io) {
 
         socket.on('takeAwayPermsFrom', async (user) => {
             // check if there is a user object
-            if (
-                !user ||
-                !user._id ||
-                !user.socketId ||
-                !user.roomName ||
-                !user.photo ||
-                !user.uid
-            ) {
+            if (!user || !user._id) {
                 io.to(socket.id).emit('errorMessage', 'user info not complete')
                 return
             }
@@ -450,7 +459,7 @@ exports.socketIOHandler = function (io) {
 
             user.uid = userData.uid
 
-            await Room.updateOne(
+            const room = await Room.findOneAndUpdate(
                 { _id },
                 {
                     $pull: {
@@ -460,13 +469,22 @@ exports.socketIOHandler = function (io) {
                     $push: {
                         audience: user._id,
                     },
+                },
+                {
+                    new: true,
+                    runValidators: true,
                 }
             )
 
+            user.roomName = room.name
             const token = generateRTC(user, false)
 
-            io.to(user.roomName).emit('userChangedToAudience', user)
-            io.to(user.socketId).emit('audienceToken', token)
+            const allSockets = await io.in(room.name).fetchSockets()
+            const userSocket = allSockets.find(({ user: userInSocket }) => {
+                return userInSocket._id.toString() === user._id.toString()
+            })
+            io.to(room.name).emit('userChangedToAudience', userSocket.user)
+            io.to(userSocket.id).emit('audienceToken', token)
         })
 
         socket.on('endRoom', async () => {
@@ -503,33 +521,44 @@ exports.socketIOHandler = function (io) {
                 if (
                     socket.user._id.toString() === existingRoom.admin.toString()
                 ) {
-                    await Room.updateOne(
-                        { _id: existingRoom._id },
-                        {
-                            isActivated: false,
-                        }
-                    )
                     io.to(existingRoom.name).emit('adminLeft')
                     console.log(
                         `admin ${socket.user.name} left room ${existingRoom.name}`
                     )
                     setTimeout(async () => {
-                        const roomStatus = await Room.findById(
-                            existingRoom._id
-                        ).select('isActivated')
-                        if (roomStatus && !roomStatus.isActivated) {
-                            io.to(existingRoom.name).emit('roomEnded')
-                            clearTimeout(socket.timerId)
-                            io.in(socket.user.roomName).disconnectSockets(true)
-                            try {
-                                const foundRoom = await Room.findOneAndDelete({
-                                    name: socket.user.roomName,
-                                })
-                            } catch (err) {
-                                console.log(err)
+                        try {
+                            const roomStatus = await Room.findById(
+                                existingRoom._id
+                            ).lean()
+
+                            if (!roomStatus) {
+                                return
                             }
+
+                            const allSockets = await io
+                                .in(roomStatus.name)
+                                .fetchSockets()
+                            const userSocket = allSockets.find(({ user }) => {
+                                return (
+                                    user._id.toString() ===
+                                    roomStatus.admin.toString()
+                                )
+                            })
+
+                            if (!userSocket) {
+                                io.to(roomStatus.name).emit('roomEnded')
+                                io.in(roomStatus.name).disconnectSockets(true)
+                                await Room.updateOne(
+                                    { _id: roomStatus._id },
+                                    {
+                                        isActivated: false,
+                                    }
+                                )
+                            }
+                        } catch (err) {
+                            console.log(err)
                         }
-                    }, 30000)
+                    }, 60000)
                 } else {
                     io.to(existingRoom.name).emit('userLeft', socket.user)
                     console.log(
