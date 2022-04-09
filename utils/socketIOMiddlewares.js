@@ -70,6 +70,19 @@ exports.socketIOHandler = function (io) {
                 return
             }
 
+            const isInRoom = await Room.findOne({
+                admin: socket.user._id,
+                isActivated: true,
+            })
+
+            if (isInRoom) {
+                io.to(socket.id).emit(
+                    'errorMessage',
+                    'there is an active room you created'
+                )
+                return
+            }
+
             if (!name || !category || !status) {
                 io.to(socket.id).emit(
                     'errorMessage',
@@ -240,6 +253,7 @@ exports.socketIOHandler = function (io) {
         socket.on('adminReJoinRoom', async () => {
             const adminFoundInRoom = await Room.findOne({
                 admin: socket.user._id,
+                isActivated: true,
             })
 
             if (!adminFoundInRoom) {
@@ -261,7 +275,10 @@ exports.socketIOHandler = function (io) {
                 userSocket.leave(adminFoundInRoom.name)
             }
 
-            const room = await Room.findOne({ name: adminFoundInRoom.name })
+            const room = await Room.findOne({
+                name: adminFoundInRoom.name,
+                isActivated: true,
+            })
                 .populate({
                     path: 'admin',
                     select: 'name photo uid',
