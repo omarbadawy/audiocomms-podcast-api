@@ -502,10 +502,14 @@ exports.socketIOHandler = function (io) {
                     io.to(existingRoom.name).emit('roomEnded')
                     io.in(socket.user.roomName).disconnectSockets(true)
                     try {
-                        await Room.updateOne({
-                            name: socket.user.roomName,
-                            isActivated: false,
-                        })
+                        await Room.updateOne(
+                            {
+                                name: socket.user.roomName,
+                            },
+                            {
+                                isActivated: false,
+                            }
+                        )
                     } catch (err) {
                         console.log(err)
                     }
