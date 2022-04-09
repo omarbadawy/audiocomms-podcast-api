@@ -70,6 +70,19 @@ exports.socketIOHandler = function (io) {
                 return
             }
 
+            const isInRoom = await Room.findOne({
+                admin: socket.user._id,
+                isActivated: true,
+            })
+
+            if (isInRoom) {
+                io.to(socket.id).emit(
+                    'errorMessage',
+                    'there is an active room you created'
+                )
+                return
+            }
+
             if (!name || !category || !status) {
                 io.to(socket.id).emit(
                     'errorMessage',
