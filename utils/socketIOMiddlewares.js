@@ -160,7 +160,10 @@ exports.socketIOHandler = function (io) {
                 }
 
                 if (roomName) {
-                    const existingRoom = await Room.findOne({ name: roomName })
+                    const existingRoom = await Room.findOne({
+                        name: roomName,
+                        isActivated: true,
+                    })
 
                     if (!existingRoom) {
                         io.to(socket.id).emit('errorMessage', 'room not found')
@@ -499,8 +502,9 @@ exports.socketIOHandler = function (io) {
                     io.to(existingRoom.name).emit('roomEnded')
                     io.in(socket.user.roomName).disconnectSockets(true)
                     try {
-                        const foundRoom = await Room.findOneAndDelete({
+                        await Room.updateOne({
                             name: socket.user.roomName,
+                            isActivated: false,
                         })
                     } catch (err) {
                         console.log(err)
