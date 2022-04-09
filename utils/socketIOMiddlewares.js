@@ -38,7 +38,6 @@ exports.socketAuthMiddleware = async (socket, next) => {
         }
 
         socket.user = {
-            id: currentUser._id,
             name: currentUser.name,
             photo: currentUser.photo,
             _id: currentUser._id,
@@ -92,7 +91,7 @@ exports.socketIOHandler = function (io) {
 
                 const room = await Room.create({
                     name,
-                    admin: socket.user.id,
+                    admin: socket.user._id,
                     category,
                     status,
                     isActivated: true,
@@ -143,8 +142,8 @@ exports.socketIOHandler = function (io) {
         })
 
         socket.on('joinRoom', async (roomName) => {
-            if (!~acknowledged.indexOf(socket.user.id)) {
-                acknowledged.unshift(socket.user.id)
+            if (!~acknowledged.indexOf(socket.user._id)) {
+                acknowledged.unshift(socket.user._id)
 
                 if (acknowledged.length > 1000) {
                     acknowledged.length = 1000
@@ -169,13 +168,13 @@ exports.socketIOHandler = function (io) {
 
                     if (
                         existingRoom.audience.includes(
-                            socket.user.id.toString()
+                            socket.user._id.toString()
                         ) ||
                         existingRoom.brodcasters.includes(
-                            socket.user.id.toString()
+                            socket.user._id.toString()
                         ) ||
                         existingRoom.admin.toString() ===
-                            socket.user.id.toString()
+                            socket.user._id.toString()
                     ) {
                         io.to(socket.id).emit(
                             'errorMessage',
@@ -188,7 +187,7 @@ exports.socketIOHandler = function (io) {
                     const room = await Room.findOneAndUpdate(
                         { name: roomName },
                         {
-                            $push: { audience: socket.user.id },
+                            $push: { audience: socket.user._id },
                         },
                         {
                             new: true,
@@ -235,12 +234,8 @@ exports.socketIOHandler = function (io) {
 
         socket.on('adminReJoinRoom', async () => {
             const adminFoundInRoom = await Room.findOne({
-                admin: socket.user.id,
+                admin: socket.user._id,
             })
-
-            console.log(
-                `${socket.user.name} tried to join ${socket.user.roomName} as admin`
-            )
 
             if (adminFoundInRoom && adminFoundInRoom.isActivated === false) {
                 socket.join(adminFoundInRoom.name)
@@ -271,10 +266,13 @@ exports.socketIOHandler = function (io) {
                         select: 'name photo uid',
                     })
 
+                const token = generateRTC(socket.user, true)
+
                 io.to(socket.id).emit(
                     'adminReJoinedRoomSuccess',
                     socket.user,
-                    room
+                    room,
+                    token
                 )
             } else {
                 io.to(socket.id).emit('errorMessage', "can't join room")
@@ -295,7 +293,7 @@ exports.socketIOHandler = function (io) {
             // check if there is a user object
             if (
                 !user ||
-                !user.id ||
+                !user._id ||
                 !user.socketId ||
                 !user.roomName ||
                 !user.photo ||
@@ -316,7 +314,7 @@ exports.socketIOHandler = function (io) {
                 return
             }
 
-            if (!(admin.toString() === socket.user.id.toString())) {
+            if (!(admin.toString() === socket.user._id.toString())) {
                 io.to(socket.id).emit(
                     'errorMessage',
                     'you are not the room admin'
@@ -325,7 +323,7 @@ exports.socketIOHandler = function (io) {
             }
 
             const foundInAudience = audience.some(
-                (aud) => aud.toString() === user.id.toString()
+                (aud) => aud.toString() === user._id.toString()
             )
             if (!foundInAudience) {
                 io.to(socket.id).emit(
@@ -335,7 +333,7 @@ exports.socketIOHandler = function (io) {
                 return
             }
 
-            const userData = await User.findById(user.id).select('uid')
+            const userData = await User.findById(user._id).select('uid')
 
             if (!userData) {
                 io.to(socket.id).emit('errorMessage', `User not found`)
@@ -348,11 +346,11 @@ exports.socketIOHandler = function (io) {
                 { _id },
                 {
                     $pull: {
-                        audience: user.id,
+                        audience: user._id,
                     },
 
                     $push: {
-                        brodcasters: user.id,
+                        brodcasters: user._id,
                     },
                 }
             )
@@ -367,7 +365,7 @@ exports.socketIOHandler = function (io) {
             if (socket.user.roomName && socket.user.socketId) {
                 const room = await Room.findOne({
                     name: socket.user.roomName,
-                    brodcasters: socket.user.id,
+                    brodcasters: socket.user._id,
                 })
 
                 if (!room) {
@@ -379,11 +377,11 @@ exports.socketIOHandler = function (io) {
                     { name: socket.user.roomName },
                     {
                         $pull: {
-                            brodcasters: socket.user.id,
+                            brodcasters: socket.user._id,
                         },
 
                         $push: {
-                            audience: socket.user.id,
+                            audience: socket.user._id,
                         },
                     }
                 )
@@ -402,7 +400,7 @@ exports.socketIOHandler = function (io) {
             // check if there is a user object
             if (
                 !user ||
-                !user.id ||
+                !user._id ||
                 !user.socketId ||
                 !user.roomName ||
                 !user.photo ||
@@ -424,7 +422,7 @@ exports.socketIOHandler = function (io) {
                 return
             }
 
-            if (!(admin.toString() === socket.user.id.toString())) {
+            if (!(admin.toString() === socket.user._id.toString())) {
                 io.to(socket.id).emit(
                     'errorMessage',
                     'you are not the room admin'
@@ -433,7 +431,7 @@ exports.socketIOHandler = function (io) {
             }
 
             const foundInBrodcasters = brodcasters.some(
-                (brod) => brod.toString() === user.id.toString()
+                (brod) => brod.toString() === user._id.toString()
             )
             if (!foundInBrodcasters) {
                 io.to(socket.id).emit(
@@ -443,7 +441,7 @@ exports.socketIOHandler = function (io) {
                 return
             }
 
-            const userData = await User.findById(user.id).select('uid')
+            const userData = await User.findById(user._id).select('uid')
 
             if (!userData) {
                 io.to(socket.id).emit('errorMessage', `User not found`)
@@ -456,11 +454,11 @@ exports.socketIOHandler = function (io) {
                 { _id },
                 {
                     $pull: {
-                        brodcasters: user.id,
+                        brodcasters: user._id,
                     },
 
                     $push: {
-                        audience: user.id,
+                        audience: user._id,
                     },
                 }
             )
@@ -477,7 +475,7 @@ exports.socketIOHandler = function (io) {
             })
             if (existingRoom) {
                 if (
-                    socket.user.id.toString() === existingRoom.admin.toString()
+                    socket.user._id.toString() === existingRoom.admin.toString()
                 ) {
                     console.log(`room ${existingRoom.name} Ended`)
                     io.to(existingRoom.name).emit('roomEnded')
@@ -495,7 +493,7 @@ exports.socketIOHandler = function (io) {
 
         socket.on('disconnecting', async () => {
             acknowledged = acknowledged.filter(
-                (userId) => userId !== socket.user.id
+                (userId) => userId !== socket.user._id
             )
             const existingRoom = await Room.findOne({
                 name: socket.user.roomName,
@@ -503,7 +501,7 @@ exports.socketIOHandler = function (io) {
             console.log(`user ${socket.user.name} disconnected`)
             if (existingRoom) {
                 if (
-                    socket.user.id.toString() === existingRoom.admin.toString()
+                    socket.user._id.toString() === existingRoom.admin.toString()
                 ) {
                     await Room.updateOne(
                         { _id: existingRoom._id },
@@ -541,8 +539,8 @@ exports.socketIOHandler = function (io) {
                         { _id: existingRoom._id },
                         {
                             $pull: {
-                                audience: socket.user.id,
-                                brodcasters: socket.user.id,
+                                audience: socket.user._id,
+                                brodcasters: socket.user._id,
                             },
                         }
                     )
