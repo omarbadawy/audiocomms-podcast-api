@@ -19,7 +19,10 @@ exports.socketAuthMiddleware = async (socket, next) => {
             process.env.JWT_SECRET
         )
 
-        const currentUser = await User.findById(decoded.id)
+        const currentUser = await User.findOne({
+            _id: decoded.id,
+            active: true,
+        })
         if (!currentUser) {
             return next(
                 new Error(
