@@ -558,7 +558,7 @@ exports.socketIOHandler = function (io) {
                         } catch (err) {
                             console.log(err)
                         }
-                    }, 30000)
+                    }, 60000)
                 } else {
                     io.to(existingRoom.name).emit('userLeft', socket.user)
                     console.log(
