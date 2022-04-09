@@ -240,6 +240,7 @@ exports.socketIOHandler = function (io) {
         socket.on('adminReJoinRoom', async () => {
             const adminFoundInRoom = await Room.findOne({
                 admin: socket.user._id,
+                isActivated: true,
             })
 
             if (!adminFoundInRoom) {
@@ -261,7 +262,10 @@ exports.socketIOHandler = function (io) {
                 userSocket.leave(adminFoundInRoom.name)
             }
 
-            const room = await Room.findOne({ name: adminFoundInRoom.name })
+            const room = await Room.findOne({
+                name: adminFoundInRoom.name,
+                isActivated: true,
+            })
                 .populate({
                     path: 'admin',
                     select: 'name photo uid',
