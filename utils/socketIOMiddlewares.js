@@ -198,7 +198,7 @@ exports.socketIOHandler = function (io) {
                     ) {
                         io.to(socket.id).emit(
                             'errorMessage',
-                            'tried to join toom twice'
+                            'tried to join room twice'
                         )
 
                         return
