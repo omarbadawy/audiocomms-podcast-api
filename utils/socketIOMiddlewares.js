@@ -75,7 +75,6 @@ exports.socketIOHandler = function (io) {
 
             const isInRoom = await Room.findOne({
                 admin: socket.user._id,
-                isActivated: true,
             })
 
             if (isInRoom) {
@@ -110,14 +109,13 @@ exports.socketIOHandler = function (io) {
                     admin: socket.user._id,
                     category,
                     status,
-                    isActivated: true,
                 })
                 console.log(
                     `user ${socket.user.name} created Room ${room.name}`
                 )
 
                 socket.join(room.name)
-                socket.timerId = setTimeout(async () => {
+                const timerId = setTimeout(async () => {
                     const sockets = await io
                         .in(existingRoom.name)
                         .fetchSockets()
@@ -126,6 +124,8 @@ exports.socketIOHandler = function (io) {
                         io.in(existingRoom.name).disconnectSockets(true)
                     }
                 }, 18000000)
+
+                await Room.updateOne({ name: room.name }, { timerId })
                 socket.user.roomName = room.name
                 const token = generateRTC(socket.user, true)
                 io.to(socket.id).emit(
@@ -178,7 +178,6 @@ exports.socketIOHandler = function (io) {
                 if (roomName) {
                     const existingRoom = await Room.findOne({
                         name: roomName,
-                        isActivated: true,
                     })
 
                     if (!existingRoom) {
@@ -256,7 +255,6 @@ exports.socketIOHandler = function (io) {
         socket.on('adminReJoinRoom', async () => {
             const adminFoundInRoom = await Room.findOne({
                 admin: socket.user._id,
-                isActivated: true,
             })
 
             if (!adminFoundInRoom) {
@@ -280,7 +278,6 @@ exports.socketIOHandler = function (io) {
 
             const room = await Room.findOne({
                 name: adminFoundInRoom.name,
-                isActivated: true,
             })
                 .populate({
                     path: 'admin',
@@ -527,14 +524,13 @@ exports.socketIOHandler = function (io) {
                     io.to(existingRoom.name).emit('roomEnded')
                     io.in(socket.user.roomName).disconnectSockets(true)
                     try {
-                        await Room.updateOne(
-                            {
-                                name: socket.user.roomName,
-                            },
-                            {
-                                isActivated: false,
-                            }
+                        console.log(
+                            `timerId will be deleted ${existingRoom.timerId} for room ${existingRoom.name}`
                         )
+                        clearTimeout(existingRoom.timerId)
+                        await Room.deleteOne({
+                            name: socket.user.roomName,
+                        })
                     } catch (err) {
                         console.log(err)
                     }
@@ -581,12 +577,13 @@ exports.socketIOHandler = function (io) {
                             if (!userSocket) {
                                 io.to(roomStatus.name).emit('roomEnded')
                                 io.in(roomStatus.name).disconnectSockets(true)
-                                await Room.updateOne(
-                                    { _id: roomStatus._id },
-                                    {
-                                        isActivated: false,
-                                    }
+                                console.log(
+                                    `timerId will be deleted ${roomStatus.timerId} for room ${roomStatus.name}`
                                 )
+                                clearTimeout(roomStatus.timerId)
+                                await Room.deleteOne({
+                                    name: roomStatus.name,
+                                })
                             }
                         } catch (err) {
                             console.log(err)

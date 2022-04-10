@@ -33,9 +33,8 @@ const roomSchema = new mongoose.Schema(
             lowercase: true,
             enum: ['private', 'public'],
         },
-        isActivated: {
-            type: Boolean,
-            default: false,
+        timerId: {
+            type: Number,
         },
     },
     { timestamps: true }

@@ -12,8 +12,6 @@ exports.getAllRooms = catchAsync(async (req, res, next) => {
         req.query.status = 'public'
     }
 
-    req.query.isActivated = true
-
     const featuresBeforePagination = new APIFeatures(
         Room.find({ status: 'public' }),
         req.query
@@ -57,7 +55,7 @@ exports.searchRoom = catchAsync(async (req, res, next) => {
         )
     }
     const data = await Room.find(
-        { status: 'public', isActivated: false, $text: { $search: s } },
+        { status: 'public', $text: { $search: s } },
         '-score',
         {
             score: { $meta: 'textScore' },
