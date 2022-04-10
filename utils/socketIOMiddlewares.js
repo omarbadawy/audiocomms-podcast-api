@@ -305,7 +305,9 @@ exports.socketIOHandler = function (io) {
             const token = generateRTC(socket.user, true)
 
             socket.join(socket.user.roomName)
-            console.log(`socket ${socket.user.roomName} joined the room again`)
+            console.log(
+                `Admin ${socket.user.name} joined the room ${socket.user.roomName} again`
+            )
 
             io.to(socket.id).emit(
                 'adminReJoinedRoomSuccess',
@@ -511,6 +513,9 @@ exports.socketIOHandler = function (io) {
         })
 
         socket.on('endRoom', async () => {
+            console.log(
+                `User ${socket.user.name} is trying to end the room ${socket.user.roomName}`
+            )
             const existingRoom = await Room.findOne({
                 name: socket.user.roomName,
             })
