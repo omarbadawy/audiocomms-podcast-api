@@ -83,7 +83,7 @@ app.all('*', (req, res, next) => {
         the global error handling middleware
      */
     //next(new AppError(`Can't find ${req.originalUrl} on the server`, 400))
-    next(new AppError(`Can't find this route on the server`, 400))
+    next(new AppError(`Can't find this route on the server`, 404))
 })
 
 app.use(globalErrorHandler)
