@@ -167,14 +167,6 @@ exports.socketIOHandler = function (io) {
                     acknowledged.length = 1000
                 }
 
-                const userRooms = Array.from(socket.rooms)
-
-                if (userRooms.length > 1) {
-                    io.to(socket.id).emit('errorMessage', 'already in room')
-
-                    return
-                }
-
                 if (roomName) {
                     const existingRoom = await Room.findOne({
                         name: roomName,
@@ -183,6 +175,9 @@ exports.socketIOHandler = function (io) {
                     if (!existingRoom) {
                         io.to(socket.id).emit('errorMessage', 'room not found')
 
+                        acknowledged = acknowledged.filter(
+                            (userId) => userId !== socket.user._id
+                        )
                         return
                     }
 
@@ -199,6 +194,9 @@ exports.socketIOHandler = function (io) {
                         io.to(socket.id).emit(
                             'errorMessage',
                             'tried to join room twice'
+                        )
+                        acknowledged = acknowledged.filter(
+                            (userId) => userId !== socket.user._id
                         )
 
                         return
