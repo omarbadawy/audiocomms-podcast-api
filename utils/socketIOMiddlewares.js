@@ -167,7 +167,18 @@ exports.socketIOHandler = function (io) {
                     acknowledged.length = 1000
                 }
 
-                if (roomName) {
+                if (!roomName || typeof roomName !== 'string') {
+                    io.to(socket.id).emit(
+                        'errorMessage',
+                        'Please enter a valid room name'
+                    )
+                    acknowledged = acknowledged.filter(
+                        (userId) => userId !== socket.user._id
+                    )
+                    return
+                }
+
+                try {
                     const existingRoom = await Room.findOne({
                         name: roomName,
                     })
@@ -241,6 +252,37 @@ exports.socketIOHandler = function (io) {
                     )
 
                     socket.to(room.name).emit('userJoined', socket.user)
+                } catch (error) {
+                    let message = "Couldn't join room"
+                    if (error.kind === 'ObjectId')
+                        message = `Invalid ${error.path}: ${error.value}`
+
+                    if (error.message.toLowerCase().includes('agora')) {
+                        message = 'agora token failed'
+                    }
+                    if (error.code === 11000)
+                        message = `Duplicate field value: ${JSON.stringify(
+                            error.keyValue
+                        )}. Please use another value`
+
+                    if (
+                        error.message
+                            .toLowerCase()
+                            .includes('validation failed')
+                    ) {
+                        const errors = Object.values(error.errors).map(
+                            (el) => el.message
+                        )
+
+                        message = `Invalid input data. ${errors.join('. ')}`
+                    }
+                    io.to(socket.id).emit('errorMessage', message)
+
+                    acknowledged = acknowledged.filter(
+                        (userId) => userId !== socket.user._id
+                    )
+
+                    return
                 }
             } else {
                 io.to(socket.id).emit(
