@@ -60,6 +60,7 @@ const getMyEvents = catchAsync(async (req, res, next) => {
     res.status(StatusCodes.OK).json({
         status: 'success',
         data: eventsData,
+        results: eventsData.length,
         docsCount,
     })
 })
@@ -105,6 +106,7 @@ const getAllFollowingEvents = catchAsync(async (req, res, next) => {
     res.status(StatusCodes.OK).json({
         status: 'success',
         data: eventsData,
+        results: eventsData.length,
         docsCount,
     })
 })
