@@ -36,6 +36,10 @@ const roomSchema = new mongoose.Schema(
         timerId: {
             type: Number,
         },
+        isRecording: {
+            type: Boolean,
+            default: false,
+        },
     },
     { timestamps: true }
 )
