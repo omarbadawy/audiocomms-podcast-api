@@ -65,7 +65,7 @@ exports.socketIOHandler = function (io) {
         })
 
         socket.on('createRoom', async (roomData) => {
-            const { name, category, status } = roomData
+            const { name, category, status, isRecording } = roomData
 
             const userRooms = Array.from(socket.rooms)
             if (userRooms.length > 1) {
@@ -109,6 +109,8 @@ exports.socketIOHandler = function (io) {
                     admin: socket.user._id,
                     category,
                     status,
+                    // add isRecording if admin record the room voice
+                    isRecording: isRecording === true ? true : false,
                 })
 
                 console.log(
