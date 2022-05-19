@@ -457,6 +457,28 @@ const searchPodcast = catchAsync(async (req, res, next) => {
         .populate('createdBy', 'name photo country language')
         .sort({ score: { $meta: 'textScore' } })
         .limit(10)
+        .lean()
+
+    const podcastsId = []
+
+    data.forEach((podcast) => podcastsId.push(podcast._id))
+
+    let podcastsLike = await Likes.find({
+        user: req.user.id,
+        podcast: {
+            $in: podcastsId,
+        },
+    }).lean()
+
+    for (let podcast of data) {
+        podcast.isLiked = false
+        for (let item of podcastsLike) {
+            if (podcast._id.toString() === item.podcast.toString()) {
+                podcast.isLiked = true
+                break
+            }
+        }
+    }
     res.status(StatusCodes.OK).json({
         status: 'success',
         results: data.length,
