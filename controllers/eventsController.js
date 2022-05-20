@@ -138,7 +138,7 @@ const getEvent = catchAsync(async (req, res, next) => {
 })
 
 const createEvent = catchAsync(async (req, res, next) => {
-    const { date, description, name, isInterested } = req.body
+    const { date, description, name } = req.body
     const { id: userId } = req.user
 
     const isDateAfterNow = () => {
@@ -174,10 +174,10 @@ const createEvent = catchAsync(async (req, res, next) => {
 
     const data = await Event.create({
         createdBy: userId,
-        date: new Date(date),
+        date: new Date(date).toISOString(),
         description,
         name,
-        expireAt: new Date(date),
+        expireAt: new Date(date).toISOString(),
     })
 
     res.status(StatusCodes.CREATED).json({
@@ -189,7 +189,7 @@ const createEvent = catchAsync(async (req, res, next) => {
 const updateEvent = catchAsync(async (req, res, next) => {
     const { id: eventId } = req.params
     const { id: userId } = req.user
-    const { name, description, date, isInterested } = req.body
+    const { name, description, date } = req.body
     const updatedObj = {}
 
     if (name) updatedObj.name = name
@@ -229,8 +229,8 @@ const updateEvent = catchAsync(async (req, res, next) => {
             )
         }
 
-        updatedObj['date'] = new Date(date)
-        updatedObj['expireAt'] = new Date(date)
+        updatedObj['date'] = new Date(date).toISOString()
+        updatedObj['expireAt'] = new Date(date).toISOString()
     }
 
     if (!eventId) {
