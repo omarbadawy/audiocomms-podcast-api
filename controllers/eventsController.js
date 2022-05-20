@@ -177,7 +177,6 @@ const createEvent = catchAsync(async (req, res, next) => {
         date: new Date(date),
         description,
         name,
-        isInterested: isInterested === true ? true : false,
         expireAt: new Date(date),
     })
 
@@ -195,7 +194,6 @@ const updateEvent = catchAsync(async (req, res, next) => {
 
     if (name) updatedObj.name = name
     if (description) updatedObj.description = description
-    updatedObj.isInterested = isInterested === true ? true : false
 
     const isDateAfterNow = () => {
         return new Date(Date.now()) < new Date(date)
