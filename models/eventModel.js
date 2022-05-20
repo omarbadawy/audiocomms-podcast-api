@@ -14,10 +14,6 @@ const eventSchema = new mongoose.Schema(
             type: String,
             required: [true, 'Please, provide the description'],
         },
-        isInterested: {
-            type: Boolean,
-            default: false,
-        },
         date: {
             type: Date,
             required: [true, 'Please, provide the date'],
