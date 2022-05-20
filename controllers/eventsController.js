@@ -138,7 +138,7 @@ const getEvent = catchAsync(async (req, res, next) => {
 })
 
 const createEvent = catchAsync(async (req, res, next) => {
-    const { date, description, name } = req.body
+    const { date, description, name, isInterested } = req.body
     const { id: userId } = req.user
 
     const isDateAfterNow = () => {
@@ -177,6 +177,7 @@ const createEvent = catchAsync(async (req, res, next) => {
         date: new Date(date),
         description,
         name,
+        isInterested: isInterested === true ? true : false,
         expireAt: new Date(date),
     })
 
@@ -189,11 +190,12 @@ const createEvent = catchAsync(async (req, res, next) => {
 const updateEvent = catchAsync(async (req, res, next) => {
     const { id: eventId } = req.params
     const { id: userId } = req.user
-    const { name, description, date } = req.body
+    const { name, description, date, isInterested } = req.body
     const updatedObj = {}
 
     if (name) updatedObj.name = name
     if (description) updatedObj.description = description
+    updatedObj.isInterested = isInterested === true ? true : false
 
     const isDateAfterNow = () => {
         return new Date(Date.now()) < new Date(date)
