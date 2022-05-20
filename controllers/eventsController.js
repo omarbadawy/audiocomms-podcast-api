@@ -172,12 +172,14 @@ const createEvent = catchAsync(async (req, res, next) => {
         )
     }
 
+    const dateFormate = new Date(date).toISOString()
+
     const data = await Event.create({
         createdBy: userId,
-        date: new Date(date).toISOString(),
+        date: new Date(dateFormate),
         description,
         name,
-        expireAt: new Date(date).toISOString(),
+        expireAt: new Date(dateFormate),
     })
 
     res.status(StatusCodes.CREATED).json({
@@ -229,8 +231,10 @@ const updateEvent = catchAsync(async (req, res, next) => {
             )
         }
 
-        updatedObj['date'] = new Date(date).toISOString()
-        updatedObj['expireAt'] = new Date(date).toISOString()
+        const dateFormate = new Date(date).toISOString()
+
+        updatedObj['date'] = new Date(dateFormate)
+        updatedObj['expireAt'] = new Date(dateFormate)
     }
 
     if (!eventId) {
