@@ -79,6 +79,11 @@ exports.socketIOHandler = function (io) {
                         'errorMessage',
                         'name, categoy and status are required'
                     )
+
+                    acknowledged = acknowledged.filter(
+                        (userId) =>
+                            userId.toString() !== socket.user._id.toString()
+                    )
                     return
                 }
 
@@ -91,6 +96,11 @@ exports.socketIOHandler = function (io) {
                         io.to(socket.id).emit(
                             'errorMessage',
                             'There is no category with that name'
+                        )
+
+                        acknowledged = acknowledged.filter(
+                            (userId) =>
+                                userId.toString() !== socket.user._id.toString()
                         )
                         return
                     }
@@ -643,7 +653,7 @@ exports.socketIOHandler = function (io) {
         socket.on('disconnecting', async () => {
             try {
                 acknowledged = acknowledged.filter(
-                    (userId) => userId !== socket.user._id
+                    (userId) => userId.toString() !== socket.user._id.toString()
                 )
                 const existingRoom = await Room.findOne({
                     name: socket.user.roomName,
