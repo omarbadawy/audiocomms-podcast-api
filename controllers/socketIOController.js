@@ -65,11 +65,8 @@ exports.socketIOHandler = function (io) {
         })
 
         socket.on('createRoom', async (roomData) => {
-            console.log(acknowledged)
-            console.log(!~acknowledged.indexOf(socket.user._id))
-            console.log(socket.user._id)
-            if (!~acknowledged.indexOf(socket.user._id)) {
-                acknowledged.unshift(socket.user._id)
+            if (!~acknowledged.indexOf(socket.user._id.toString())) {
+                acknowledged.unshift(socket.user._id.toString())
 
                 if (acknowledged.length > 1000) {
                     acknowledged.length = 1000
@@ -169,6 +166,11 @@ exports.socketIOHandler = function (io) {
                         message = `Invalid input data. ${errors.join('. ')}`
                     }
                     io.to(socket.id).emit('errorMessage', message)
+
+                    acknowledged = acknowledged.filter(
+                        (userId) =>
+                            userId.toString() !== socket.user._id.toString()
+                    )
                     return
                 }
             } else {
@@ -177,8 +179,8 @@ exports.socketIOHandler = function (io) {
         })
 
         socket.on('joinRoom', async (roomName) => {
-            if (!~acknowledged.indexOf(socket.user._id)) {
-                acknowledged.unshift(socket.user._id)
+            if (!~acknowledged.indexOf(socket.user._id.toString())) {
+                acknowledged.unshift(socket.user._id.toString())
 
                 if (acknowledged.length > 1000) {
                     acknowledged.length = 1000
@@ -190,7 +192,8 @@ exports.socketIOHandler = function (io) {
                         'Please enter a valid room name'
                     )
                     acknowledged = acknowledged.filter(
-                        (userId) => userId !== socket.user._id
+                        (userId) =>
+                            userId.toString() !== socket.user._id.toString()
                     )
                     return
                 }
@@ -204,7 +207,8 @@ exports.socketIOHandler = function (io) {
                         io.to(socket.id).emit('errorMessage', 'room not found')
 
                         acknowledged = acknowledged.filter(
-                            (userId) => userId !== socket.user._id
+                            (userId) =>
+                                userId.toString() !== socket.user._id.toString()
                         )
                         return
                     }
@@ -224,7 +228,8 @@ exports.socketIOHandler = function (io) {
                             'tried to join room twice'
                         )
                         acknowledged = acknowledged.filter(
-                            (userId) => userId !== socket.user._id
+                            (userId) =>
+                                userId.toString() !== socket.user._id.toString()
                         )
 
                         return
@@ -301,7 +306,8 @@ exports.socketIOHandler = function (io) {
                     io.to(socket.id).emit('errorMessage', message)
 
                     acknowledged = acknowledged.filter(
-                        (userId) => userId !== socket.user._id
+                        (userId) =>
+                            userId.toString() !== socket.user._id.toString()
                     )
 
                     return
