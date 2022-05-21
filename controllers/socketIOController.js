@@ -313,10 +313,7 @@ exports.socketIOHandler = function (io) {
                     return
                 }
             } else {
-                io.to(socket.id).emit(
-                    'errorMessage',
-                    "can't join more than one room"
-                )
+                io.to(socket.id).emit('errorMessage', 'You are already in room')
             }
         })
 
