@@ -70,7 +70,7 @@ exports.getUserFollowing = catchAsync(async (req, res, next) => {
         featuresBeforePagination.query
     )
 
-    await User.updateOne({ _id: req.params.id }, { follower: docsCount })
+    await User.updateOne({ _id: req.params.id }, { following: docsCount })
 
     res.status(StatusCodes.OK).json({
         status: 'success',
