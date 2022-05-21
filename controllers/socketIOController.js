@@ -65,6 +65,7 @@ exports.socketIOHandler = function (io) {
         })
 
         socket.on('createRoom', async (roomData) => {
+            console.log(acknowledged)
             if (!~acknowledged.indexOf(socket.user._id)) {
                 acknowledged.unshift(socket.user._id)
 
