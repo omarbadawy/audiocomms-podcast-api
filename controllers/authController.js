@@ -39,7 +39,6 @@ exports.signup = catchAsync(async (req, res, next) => {
         passwordConfirm: req.body.passwordConfirm,
         country: req.body.country,
         language: req.body.language,
-        userType: req.body.userType,
     })
 
     const uid = stringToHashCode(newUser.name)
