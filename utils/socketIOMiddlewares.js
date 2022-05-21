@@ -65,113 +65,111 @@ exports.socketIOHandler = function (io) {
         })
 
         socket.on('createRoom', async (roomData) => {
-            const { name, category, status, isRecording } = roomData
+            if (!~acknowledged.indexOf(socket.user._id)) {
+                acknowledged.unshift(socket.user._id)
 
-            const userRooms = Array.from(socket.rooms)
-            if (userRooms.length > 1) {
-                io.to(socket.id).emit('errorMessage', 'already in room')
-                return
-            }
+                if (acknowledged.length > 1000) {
+                    acknowledged.length = 1000
+                }
 
-            const isInRoom = await Room.findOne({
-                admin: socket.user._id,
-            })
+                const { name, category, status, isRecording } = roomData
 
-            if (isInRoom) {
-                io.to(socket.id).emit(
-                    'errorMessage',
-                    'there is an active room you created'
-                )
-                return
-            }
-
-            if (!name || !category || !status) {
-                io.to(socket.id).emit(
-                    'errorMessage',
-                    'name, categoy and status are required'
-                )
-                return
-            }
-
-            try {
-                const categoryData = await Category.findOne({ name: category })
-
-                if (!categoryData) {
+                if (!name || !category || !status) {
                     io.to(socket.id).emit(
                         'errorMessage',
-                        'There is no category with that name'
+                        'name, categoy and status are required'
                     )
                     return
                 }
 
-                const room = await Room.create({
-                    name,
-                    admin: socket.user._id,
-                    category,
-                    status,
-                    // add isRecording if admin record the room voice
-                    isRecording: isRecording === true ? true : false,
-                })
+                try {
+                    const categoryData = await Category.findOne({
+                        name: category,
+                    })
 
-                console.log(
-                    `user ${socket.user.name} created Room ${room.name}`
-                )
-
-                socket.join(room.name)
-                const timerId = setTimeout(async () => {
-                    const sockets = await io
-                        .in(existingRoom.name)
-                        .fetchSockets()
-                    if (sockets.length > 0) {
-                        io.to(existingRoom.name).emit('roomEnded')
-                        io.in(existingRoom.name).disconnectSockets(true)
+                    if (!categoryData) {
+                        io.to(socket.id).emit(
+                            'errorMessage',
+                            'There is no category with that name'
+                        )
+                        return
                     }
-                }, 18000000)
 
-                const updatedRoom = await Room.findOneAndUpdate(
-                    { name: room.name },
-                    { timerId },
-                    {
-                        new: true,
-                        runValidators: true,
-                    }
-                ).lean()
+                    const room = await Room.create({
+                        name,
+                        admin: socket.user._id,
+                        category,
+                        status,
+                        // add isRecording if admin record the room voice
+                        isRecording: isRecording === true ? true : false,
+                    })
 
-                socket.user.roomName = updatedRoom.name
-
-                const token = generateRTC(socket.user, true)
-
-                updatedRoom.APP_ID = process.env.APP_ID
-
-                io.to(socket.id).emit(
-                    'createRoomSuccess',
-                    socket.user,
-                    updatedRoom,
-                    token
-                )
-            } catch (error) {
-                console.log(error)
-                let message = "Couldn't create room"
-                if (error.kind === 'ObjectId')
-                    message = `Invalid ${error.path}: ${error.value}`
-
-                if (error.message.toLowerCase().includes('agora')) {
-                    message = 'agora token failed'
-                }
-                if (error.code === 11000)
-                    message = `Duplicate field value: ${JSON.stringify(
-                        error.keyValue
-                    )}. Please use another value`
-
-                if (error.message.toLowerCase().includes('validation failed')) {
-                    const errors = Object.values(error.errors).map(
-                        (el) => el.message
+                    console.log(
+                        `user ${socket.user.name} created Room ${room.name}`
                     )
 
-                    message = `Invalid input data. ${errors.join('. ')}`
+                    socket.join(room.name)
+                    const timerId = setTimeout(async () => {
+                        const sockets = await io
+                            .in(existingRoom.name)
+                            .fetchSockets()
+                        if (sockets.length > 0) {
+                            io.to(existingRoom.name).emit('roomEnded')
+                            io.in(existingRoom.name).disconnectSockets(true)
+                        }
+                    }, 18000000)
+
+                    const updatedRoom = await Room.findOneAndUpdate(
+                        { name: room.name },
+                        { timerId },
+                        {
+                            new: true,
+                            runValidators: true,
+                        }
+                    ).lean()
+
+                    socket.user.roomName = updatedRoom.name
+
+                    const token = generateRTC(socket.user, true)
+
+                    updatedRoom.APP_ID = process.env.APP_ID
+
+                    io.to(socket.id).emit(
+                        'createRoomSuccess',
+                        socket.user,
+                        updatedRoom,
+                        token
+                    )
+                } catch (error) {
+                    console.log(error)
+                    let message = "Couldn't create room"
+                    if (error.kind === 'ObjectId')
+                        message = `Invalid ${error.path}: ${error.value}`
+
+                    if (error.message.toLowerCase().includes('agora')) {
+                        message = 'agora token failed'
+                    }
+                    if (error.code === 11000)
+                        message = `Duplicate field value: ${JSON.stringify(
+                            error.keyValue
+                        )}. Please use another value`
+
+                    if (
+                        error.message
+                            .toLowerCase()
+                            .includes('validation failed')
+                    ) {
+                        const errors = Object.values(error.errors).map(
+                            (el) => el.message
+                        )
+
+                        message = `Invalid input data. ${errors.join('. ')}`
+                    }
+                    io.to(socket.id).emit('errorMessage', message)
+                    return
                 }
-                io.to(socket.id).emit('errorMessage', message)
-                return
+            } else {
+                io.to(socket.id).emit('errorMessage', 'You are already in room')
             }
         })
 
