@@ -11,7 +11,7 @@ const generateRTC = require('./utils/generateRTC')
 const {
     socketAuthMiddleware,
     socketIOHandler,
-} = require('./utils/socketIOMiddlewares')
+} = require('./controllers/socketIOController')
 
 process.on('uncaughtException', (err) => {
     console.log('UNCAUGHT EXCEPTION!!')

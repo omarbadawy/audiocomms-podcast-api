@@ -118,7 +118,6 @@ exports.updateMe = catchAsync(async (req, res, next) => {
         'email',
         'language',
         'country',
-        'userType',
         'bio'
     )
 

@@ -4,7 +4,7 @@ const Category = require('../models/categoryModel')
 
 const { promisify } = require('util')
 const jwt = require('jsonwebtoken')
-const generateRTC = require('./generateRTC')
+const generateRTC = require('../utils/generateRTC')
 
 let acknowledged = []
 exports.socketAuthMiddleware = async (socket, next) => {

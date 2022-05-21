@@ -64,13 +64,6 @@ const userSchema = new mongoose.Schema(
             trim: true,
             lowercase: true,
         },
-        userType: {
-            type: String,
-            required: [true, 'tell us are you a podcaster or listener.'],
-            trim: true,
-            lowercase: true,
-            enum: ['podcaster', 'listener'],
-        },
         photo: {
             type: String,
             default:
