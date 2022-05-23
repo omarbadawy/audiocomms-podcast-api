@@ -13,6 +13,8 @@ const {
     socketIOHandler,
 } = require('./controllers/socketIOController')
 
+const removeRestrictedData = require('./utils/removeRestrictedData')
+
 process.on('uncaughtException', (err) => {
     console.log('UNCAUGHT EXCEPTION!!')
     console.log(err.name, err.message)
@@ -36,7 +38,15 @@ mongoose
         useFindAndModify: false,
         useUnifiedTopology: true,
     })
-    .then(() => console.log('DB connection successful!'))
+    .then(async () => {
+        console.log('DB connection successful!')
+    })
+
+const dayInMiliseconds = 24 * 60 * 60 * 1000
+
+setInterval(async () => {
+    await removeRestrictedData()
+}, dayInMiliseconds)
 
 cloudinaryConfig()
 
