@@ -72,6 +72,23 @@ exports.socketIOHandler = function (io) {
                     acknowledged.length = 1000
                 }
 
+                const roomCreatedByUser = await Room.findOne({
+                    admin: socket.user._id,
+                })
+
+                if (roomCreatedByUser) {
+                    io.to(socket.id).emit(
+                        'errorMessage',
+                        'There is a room you created already'
+                    )
+
+                    acknowledged = acknowledged.filter(
+                        (userId) =>
+                            userId.toString() !== socket.user._id.toString()
+                    )
+                    return
+                }
+
                 const { name, category, status, isRecording } = roomData
 
                 if (!name || !category || !status) {
