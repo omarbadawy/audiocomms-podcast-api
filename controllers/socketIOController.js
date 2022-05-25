@@ -79,7 +79,7 @@ exports.socketIOHandler = function (io) {
                 if (roomCreatedByUser) {
                     io.to(socket.id).emit(
                         'errorMessage',
-                        'There is a room you created already'
+                        `There is a room you created already with id=${roomCreatedByUser._id}`
                     )
 
                     acknowledged = acknowledged.filter(
