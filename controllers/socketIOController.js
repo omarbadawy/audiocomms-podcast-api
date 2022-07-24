@@ -1,6 +1,8 @@
 const User = require('../models/userModel')
 const Room = require('../models/roomModel')
+const RoomChat = require('../models/roomChatModel')
 const Category = require('../models/categoryModel')
+const handleError = require('../utils/handleSocketIOError')
 
 const { promisify } = require('util')
 const jwt = require('jsonwebtoken')
@@ -61,6 +63,201 @@ exports.socketIOHandler = function (io) {
         socket.on('error', (err) => {
             if (err) {
                 socket.disconnect()
+            }
+        })
+        socket.on('sendMessage', async (messageData) => {
+            try {
+                // check messageData room ,message , status
+                const userId = socket.user._id
+                let options = {}
+                if (
+                    !messageData ||
+                    !messageData.message ||
+                    !messageData.status
+                ) {
+                    io.to(socket.id).emit(
+                        'errorMessage',
+                        `Invalid input data, message and status is required.`
+                    )
+                    return
+                }
+
+                if (messageData.status === 'private') {
+                    options.status = 'private'
+                    if (!messageData.to) {
+                        io.to(socket.id).emit(
+                            'errorMessage',
+                            `Please, provide user id you want to send to.`
+                        )
+                        return
+                    }
+                    let user = await User.findById(messageData.to).lean()
+                    if (!user) {
+                        io.to(socket.id).emit(
+                            'errorMessage',
+                            `User is not Found.`
+                        )
+                        return
+                    }
+                    options.to = user._id
+                } else {
+                    options.status = 'public'
+                    options.to = userId
+                }
+
+                // check if user in the room
+                let room = await Room.findOne({
+                    name: socket.user.roomName,
+                }).lean()
+                if (!room) {
+                    io.to(socket.id).emit('errorMessage', `Room is not Found.`)
+                    return
+                }
+
+                if (
+                    room.admin.toString() !== userId.toString() &&
+                    !room.audience.some(
+                        (id) => id.toString() === userId.toString()
+                    ) &&
+                    !room.brodcasters.some(
+                        (id) => id.toString() === userId.toString()
+                    )
+                ) {
+                    io.to(socket.id).emit(
+                        'errorMessage',
+                        'you do not in this room join it first.'
+                    )
+                    return
+                }
+                options.room = room._id
+                options.user = userId
+                options.message = messageData.message
+
+                // create message
+                let message = await RoomChat.create(options)
+                message = await message
+                    .populate({
+                        path: 'user',
+                        select: 'name photo uid',
+                    })
+                    .populate({
+                        path: 'to',
+                        select: 'name photo uid',
+                    })
+                    .populate({
+                        path: 'room',
+                        select: 'name category',
+                    })
+                    .execPopulate()
+
+                // send message to room users
+                if (message.status === 'private') {
+                    if (
+                        message.to._id.toString() !==
+                        message.user._id.toString()
+                    ) {
+                        const allSockets = await io.in(room.name).fetchSockets()
+                        const userSocket = allSockets.find(
+                            (soct) =>
+                                soct.user._id.toString() ===
+                                message.to._id.toString()
+                        )
+                        if (!userSocket) {
+                            io.to(socket.id).emit(
+                                'errorMessage',
+                                `User is not in the room.`
+                            )
+                            return
+                        }
+                        io.to(userSocket.id).emit('message', message)
+                    } else message.to = undefined
+                } else {
+                    message.to = undefined
+                    socket.to(room.name).emit('message', message)
+                }
+
+                io.to(socket.id).emit('sendMessageSuccess', message)
+            } catch (error) {
+                let message = handleError(error, `Can't create the message.`)
+                io.to(socket.id).emit('errorMessage', message)
+            }
+        })
+        socket.on('removeMessage', async (messageId) => {
+            try {
+                let userId = socket.user._id
+                if (!messageId) {
+                    io.to(socket.id).emit(
+                        'errorMessage',
+                        `Please, provide message id.`
+                    )
+                    return
+                }
+                if (!socket.user.roomName) {
+                    io.to(socket.id).emit(
+                        'errorMessage',
+                        `You don't in a room.`
+                    )
+                    return
+                }
+
+                const room = await Room.findOne({
+                    name: socket.user.roomName,
+                }).lean()
+
+                if (!room) {
+                    io.to(socket.id).emit('errorMessage', `Room is not found.`)
+                    return
+                }
+                let message = await RoomChat.findOneAndDelete({
+                    room: room._id,
+                    _id: messageId,
+                    user: userId,
+                })
+                    .populate({
+                        path: 'user',
+                        select: 'name photo uid',
+                    })
+                    .populate({
+                        path: 'to',
+                        select: 'name photo uid',
+                    })
+                    .populate({
+                        path: 'room',
+                        select: 'name category',
+                    })
+                    .lean()
+
+                if (!message) {
+                    io.to(socket.id).emit(
+                        'errorMessage',
+                        `Message is not found.`
+                    )
+                    return
+                }
+                // send message to room users
+                if (message.status === 'private') {
+                    if (
+                        message.to._id.toString() !==
+                        message.user._id.toString()
+                    ) {
+                        const allSockets = await io.in(room.name).fetchSockets()
+                        const userSocket = allSockets.find(
+                            (soct) =>
+                                soct.user._id.toString() ===
+                                message.to._id.toString()
+                        )
+                        if (userSocket) {
+                            io.to(userSocket.id).emit('messageRemoved', message)
+                        }
+                    } else message.to = undefined
+                } else {
+                    message.to = undefined
+                    socket.to(room.name).emit('messageRemoved', message)
+                }
+                io.to(socket.id).emit('removeMessageSuccess', message)
+            } catch (error) {
+                let message = handleError(error, `Can't remove the message.`)
+                io.to(socket.id).emit('errorMessage', message)
             }
         })
 
@@ -168,32 +365,8 @@ exports.socketIOHandler = function (io) {
                         token
                     )
                 } catch (error) {
-                    console.log(error)
-                    let message = "Couldn't create room"
-                    if (error.kind === 'ObjectId')
-                        message = `Invalid ${error.path}: ${error.value}`
-
-                    if (error.message.toLowerCase().includes('agora')) {
-                        message = 'agora token failed'
-                    }
-                    if (error.code === 11000)
-                        message = `Duplicate field value: ${JSON.stringify(
-                            error.keyValue
-                        )}. Please use another value`
-
-                    if (
-                        error.message
-                            .toLowerCase()
-                            .includes('validation failed')
-                    ) {
-                        const errors = Object.values(error.errors).map(
-                            (el) => el.message
-                        )
-
-                        message = `Invalid input data. ${errors.join('. ')}`
-                    }
+                    let message = handleError(error, "Couldn't create room")
                     io.to(socket.id).emit('errorMessage', message)
-
                     acknowledged = acknowledged.filter(
                         (userId) =>
                             userId.toString() !== socket.user._id.toString()
@@ -306,30 +479,7 @@ exports.socketIOHandler = function (io) {
 
                     socket.to(room.name).emit('userJoined', socket.user)
                 } catch (error) {
-                    console.log(error)
-                    let message = "Couldn't join room"
-                    if (error.kind === 'ObjectId')
-                        message = `Invalid ${error.path}: ${error.value}`
-
-                    if (error.message.toLowerCase().includes('agora')) {
-                        message = 'agora token failed'
-                    }
-                    if (error.code === 11000)
-                        message = `Duplicate field value: ${JSON.stringify(
-                            error.keyValue
-                        )}. Please use another value`
-
-                    if (
-                        error.message
-                            .toLowerCase()
-                            .includes('validation failed')
-                    ) {
-                        const errors = Object.values(error.errors).map(
-                            (el) => el.message
-                        )
-
-                        message = `Invalid input data. ${errors.join('. ')}`
-                    }
+                    let message = handleError(error, "Couldn't join room")
                     io.to(socket.id).emit('errorMessage', message)
 
                     acknowledged = acknowledged.filter(
@@ -411,8 +561,8 @@ exports.socketIOHandler = function (io) {
                     token
                 )
             } catch (error) {
-                console.log(error)
-                io.to(socket.id).emit('errorMessage', "can't rejoin room")
+                let message = handleError(error, "can't rejoin room.")
+                io.to(socket.id).emit('errorMessage', message)
             }
         })
 
@@ -504,8 +654,8 @@ exports.socketIOHandler = function (io) {
                 )
                 io.to(userSocket.id).emit('brodcasterToken', token)
             } catch (error) {
-                console.log(error)
-                io.to(socket.id).emit('errorMessage', 'something went wrong')
+                let message = handleError(error, 'Something went wrong.')
+                io.to(socket.id).emit('errorMessage', message)
             }
         })
 
@@ -544,8 +694,8 @@ exports.socketIOHandler = function (io) {
                     io.to(socket.user.socketId).emit('audienceToken', token)
                 }
             } catch (error) {
-                console.log(error)
-                io.to(socket.id).emit('errorMessage', 'something went wrong')
+                let message = handleError(error, 'Something went wrong.')
+                io.to(socket.id).emit('errorMessage', message)
             }
         })
 
@@ -627,8 +777,8 @@ exports.socketIOHandler = function (io) {
                 io.to(room.name).emit('userChangedToAudience', userSocket.user)
                 io.to(userSocket.id).emit('audienceToken', token)
             } catch (error) {
-                console.log(error)
-                io.to(socket.id).emit('errorMessage', 'something went wrong')
+                let message = handleError(error, 'Something went wrong.')
+                io.to(socket.id).emit('errorMessage', message)
             }
         })
 
@@ -656,14 +806,17 @@ exports.socketIOHandler = function (io) {
                             await Room.deleteOne({
                                 name: socket.user.roomName,
                             })
+                            await RoomChat.deleteMany({
+                                room: existingRoom._id,
+                            })
                         } catch (err) {
                             console.log(err)
                         }
                     }
                 }
             } catch (error) {
-                console.log(error)
-                io.to(socket.id).emit('errorMessage', 'something went wrong')
+                let message = handleError(error, 'Something went wrong.')
+                io.to(socket.id).emit('errorMessage', message)
             }
         })
 
