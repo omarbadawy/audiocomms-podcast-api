@@ -53,10 +53,7 @@ const getAllRoomChat = catchAsync(async (req, res, next) => {
         .lean()
 
     chatMessages = chatMessages.map((item) => {
-        if (
-            item.status === 'public' ||
-            item.to._id.toString() === item.user._id.toString()
-        ) {
+        if (item.to._id.toString() === item.user._id.toString()) {
             item.to = undefined
         }
         return item
@@ -112,10 +109,7 @@ const searchRoomChat = catchAsync(async (req, res, next) => {
         .limit(10)
         .lean()
     data = data.map((item) => {
-        if (
-            item.status === 'public' ||
-            item.to._id.toString() === item.user._id.toString()
-        ) {
+        if (item.to._id.toString() === item.user._id.toString()) {
             item.to = undefined
         }
         return item
@@ -156,11 +150,7 @@ const getMessage = catchAsync(async (req, res, next) => {
         return next(new AppError('Not found', StatusCodes.NOT_FOUND))
     }
 
-    if (
-        data.status === 'public' ||
-        item.to._id.toString() === item.user._id.toString()
-    )
-        data.to = undefined
+    if (item.to._id.toString() === item.user._id.toString()) data.to = undefined
     res.status(StatusCodes.OK).json({
         status: 'success',
         data,
