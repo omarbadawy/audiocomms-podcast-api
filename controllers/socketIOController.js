@@ -67,9 +67,10 @@ exports.socketIOHandler = function (io) {
         })
         socket.on('sendMessage', async (messageData) => {
             try {
-                // check messageData room ,message , status
                 const userId = socket.user._id
                 let options = {}
+
+                // 1. check validation for message data.
                 if (
                     !messageData ||
                     !messageData.message ||
@@ -82,15 +83,10 @@ exports.socketIOHandler = function (io) {
                     return
                 }
 
-                if (messageData.status === 'private') {
-                    options.status = 'private'
-                    if (!messageData.to) {
-                        io.to(socket.id).emit(
-                            'errorMessage',
-                            `Please, provide user id you want to send to.`
-                        )
-                        return
-                    }
+                options.message = messageData.message
+                options.status = messageData.status
+
+                if (messageData.to) {
                     let user = await User.findById(messageData.to).lean()
                     if (!user) {
                         io.to(socket.id).emit(
@@ -100,12 +96,18 @@ exports.socketIOHandler = function (io) {
                         return
                     }
                     options.to = user._id
-                } else {
-                    options.status = 'public'
-                    options.to = userId
-                }
+                } else options.to = userId
 
                 // check if user in the room
+
+                if (!socket.user.roomName) {
+                    io.to(socket.id).emit(
+                        'errorMessage',
+                        `Please, join a room first`
+                    )
+                    return
+                }
+
                 let room = await Room.findOne({
                     name: socket.user.roomName,
                 }).lean()
@@ -125,15 +127,16 @@ exports.socketIOHandler = function (io) {
                 ) {
                     io.to(socket.id).emit(
                         'errorMessage',
-                        'you do not in this room join it first.'
+                        'you are not in this room join it first.'
                     )
                     return
                 }
+
                 options.room = room._id
                 options.user = userId
-                options.message = messageData.message
 
-                // create message
+                // 2. create the message.
+
                 let message = await RoomChat.create(options)
                 message = await message
                     .populate({
@@ -150,29 +153,25 @@ exports.socketIOHandler = function (io) {
                     })
                     .execPopulate()
 
-                // send message to room users
-                if (message.status === 'private') {
-                    if (
-                        message.to._id.toString() !==
-                        message.user._id.toString()
-                    ) {
-                        const allSockets = await io.in(room.name).fetchSockets()
-                        const userSocket = allSockets.find(
-                            (soct) =>
-                                soct.user._id.toString() ===
-                                message.to._id.toString()
-                        )
-                        if (!userSocket) {
-                            io.to(socket.id).emit(
-                                'errorMessage',
-                                `User is not in the room.`
-                            )
-                            return
-                        }
-                        io.to(userSocket.id).emit('message', message)
-                    } else message.to = undefined
-                } else {
+                // 3. send the message.
+
+                if (message.to._id.toString() === message.user._id.toString())
                     message.to = undefined
+
+                if (message.status === 'private' && message.to) {
+                    const allSockets = await io.in(room.name).fetchSockets()
+                    const userSocket = allSockets.find(
+                        (soct) =>
+                            soct.user._id.toString() ===
+                            message.to._id.toString()
+                    )
+
+                    if (userSocket) {
+                        io.to(userSocket.id).emit('message', message)
+                    }
+                }
+
+                if (message.status === 'public') {
                     socket.to(room.name).emit('message', message)
                 }
 
@@ -185,13 +184,16 @@ exports.socketIOHandler = function (io) {
         socket.on('removeMessage', async (messageId) => {
             try {
                 let userId = socket.user._id
+
+                // 1. check for validation
                 if (!messageId) {
                     io.to(socket.id).emit(
                         'errorMessage',
-                        `Please, provide message id.`
+                        `message id is required.`
                     )
                     return
                 }
+
                 if (!socket.user.roomName) {
                     io.to(socket.id).emit(
                         'errorMessage',
@@ -208,6 +210,8 @@ exports.socketIOHandler = function (io) {
                     io.to(socket.id).emit('errorMessage', `Room is not found.`)
                     return
                 }
+
+                // 2. remove the message
                 let message = await RoomChat.findOneAndDelete({
                     room: room._id,
                     _id: messageId,
@@ -234,26 +238,27 @@ exports.socketIOHandler = function (io) {
                     )
                     return
                 }
-                // send message to room users
-                if (message.status === 'private') {
-                    if (
-                        message.to._id.toString() !==
-                        message.user._id.toString()
-                    ) {
-                        const allSockets = await io.in(room.name).fetchSockets()
-                        const userSocket = allSockets.find(
-                            (soct) =>
-                                soct.user._id.toString() ===
-                                message.to._id.toString()
-                        )
-                        if (userSocket) {
-                            io.to(userSocket.id).emit('messageRemoved', message)
-                        }
-                    } else message.to = undefined
-                } else {
+                // 3. send the message removed to users
+                if (message.to._id.toString() === message.user._id.toString())
                     message.to = undefined
+
+                if (message.status === 'private' && message.to) {
+                    const allSockets = await io.in(room.name).fetchSockets()
+                    const userSocket = allSockets.find(
+                        (soct) =>
+                            soct.user._id.toString() ===
+                            message.to._id.toString()
+                    )
+
+                    if (userSocket) {
+                        io.to(userSocket.id).emit('messageRemoved', message)
+                    }
+                }
+
+                if (message.status === 'public') {
                     socket.to(room.name).emit('messageRemoved', message)
                 }
+
                 io.to(socket.id).emit('removeMessageSuccess', message)
             } catch (error) {
                 let message = handleError(error, `Can't remove the message.`)
