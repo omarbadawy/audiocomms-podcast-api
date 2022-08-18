@@ -7,7 +7,7 @@ const { StatusCodes } = require('http-status-codes')
 
 const getAllRoomChat = catchAsync(async (req, res, next) => {
     const { id: userId } = req.user
-    const { id: roomId } = req.params
+    const { roomId } = req.params
     if (req.query.status) {
         delete req.query.status
     }
@@ -46,10 +46,6 @@ const getAllRoomChat = catchAsync(async (req, res, next) => {
             path: 'to',
             select: 'name photo uid',
         })
-        .populate({
-            path: 'room',
-            select: 'name category',
-        })
         .lean()
 
     chatMessages = chatMessages.map((item) => {
@@ -72,7 +68,7 @@ const getAllRoomChat = catchAsync(async (req, res, next) => {
 const searchRoomChat = catchAsync(async (req, res, next) => {
     const { id: userId } = req.user
     const { s } = req.query
-    const { id: roomId } = req.params
+    const { roomId } = req.params
     console.log(roomId, s)
     if (!s) {
         return next(
@@ -101,10 +97,6 @@ const searchRoomChat = catchAsync(async (req, res, next) => {
             path: 'to',
             select: 'name photo uid',
         })
-        .populate({
-            path: 'room',
-            select: 'name category',
-        })
         .sort({ score: { $meta: 'textScore' } })
         .limit(10)
         .lean()
@@ -122,8 +114,7 @@ const searchRoomChat = catchAsync(async (req, res, next) => {
 })
 
 const getMessage = catchAsync(async (req, res, next) => {
-    const { id: messageId } = req.params
-
+    const { id: messageId, roomId } = req.params
     if (!messageId) {
         return next(
             new AppError('Please, check room id param', StatusCodes.BAD_REQUEST)
@@ -132,6 +123,7 @@ const getMessage = catchAsync(async (req, res, next) => {
 
     let data = await RoomChat.findOne({
         _id: messageId,
+        room: roomId,
     })
         .populate({
             path: 'user',
@@ -140,10 +132,6 @@ const getMessage = catchAsync(async (req, res, next) => {
         .populate({
             path: 'to',
             select: 'name photo uid',
-        })
-        .populate({
-            path: 'room',
-            select: 'name category',
         })
         .lean()
     if (!data) {

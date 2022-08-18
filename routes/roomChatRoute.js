@@ -6,14 +6,14 @@ const {
     searchRoomChat,
     deleteMessage,
 } = require('../controllers/roomChatController')
-const { protect, restrictTo } = require('../controllers/authController')
+const { restrictTo } = require('../controllers/authController')
 
-const router = express.Router()
+const router = express.Router({
+    mergeParams: true,
+})
 
-router.use(protect)
-
-router.get('/room/:id', getAllRoomChat)
-router.get('/room/:id/search', searchRoomChat)
+router.get('/', getAllRoomChat)
+router.get('/search', searchRoomChat)
 router.get('/:id', getMessage)
 
 router.use(restrictTo('admin'))
