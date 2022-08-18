@@ -1,5 +1,5 @@
 const express = require('express')
-
+const roomChatRouter = require('./roomChatRoute')
 const {
     getAllRooms,
     getRoom,
@@ -11,6 +11,8 @@ const { protect, restrictTo } = require('../controllers/authController')
 const router = express.Router()
 
 router.use(protect)
+
+router.use('/:roomId/chat', roomChatRouter)
 
 router.route('/').get(getAllRooms)
 router.get('/search', searchRoom)
