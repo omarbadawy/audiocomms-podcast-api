@@ -258,13 +258,34 @@ exports.searchUser = catchAsync(async (req, res, next) => {
             new AppError('Please, check search param', StatusCodes.BAD_REQUEST)
         )
     }
-    const data = await User.find({ $text: { $search: s } }, '-score', {
+    const users = await User.find({ $text: { $search: s } }, '-score', {
         score: { $meta: 'textScore' },
     })
         .select('-active -role -passwordChangedAt')
         .sort({ score: { $meta: 'textScore' } })
         .limit(10)
-    res.status(StatusCodes.OK).json({ status: 'success', data })
+        .lean()
+
+    const usersIds = []
+
+    users.forEach((user) => usersIds.push(user._id))
+
+    let usersFollowedByMe = await Follow.find(
+        {
+            follower: req.user.id,
+            following: { $in: usersIds },
+        },
+        { following: 1, _id: 0 }
+    ).lean()
+
+    users.forEach((user) => {
+        user.isFollowed = usersFollowedByMe.some(
+            (userFollowed) =>
+                userFollowed.following.toString() === user._id.toString()
+        )
+    })
+
+    res.status(StatusCodes.OK).json({ status: 'success', users })
 })
 
 exports.getAllFullUsers = factory.getAll(User, true)
