@@ -92,6 +92,26 @@ exports.getUserFollowing = catchAsync(async (req, res, next) => {
 
     await User.updateOne({ _id: req.params.id }, { following: docsCount })
 
+    const usersIds = []
+
+    follower.forEach((user) => usersIds.push(user.following._id))
+
+    let usersFollowedByMe = await Follow.find(
+        {
+            follower: req.user.id,
+            following: { $in: usersIds },
+        },
+        { following: 1, _id: 0 }
+    ).lean()
+
+    follower.forEach((user) => {
+        user.following.isFollowed = usersFollowedByMe.some(
+            (userFollowed) =>
+                userFollowed.following.toString() ===
+                user.following._id.toString()
+        )
+    })
+
     res.status(StatusCodes.OK).json({
         status: 'success',
         docsCount,
