@@ -285,7 +285,7 @@ exports.searchUser = catchAsync(async (req, res, next) => {
         )
     })
 
-    res.status(StatusCodes.OK).json({ status: 'success', users })
+    res.status(StatusCodes.OK).json({ status: 'success', data: users })
 })
 
 exports.getAllFullUsers = factory.getAll(User, true)
