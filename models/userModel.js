@@ -66,8 +66,7 @@ const userSchema = new mongoose.Schema(
         },
         photo: {
             type: String,
-            default:
-                'https://audiocomms-podcast-platform.herokuapp.com/img/users/default.jpg',
+            default: '/img/users/default.jpg',
         },
         role: {
             type: String,
