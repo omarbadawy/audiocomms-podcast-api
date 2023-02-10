@@ -8,30 +8,38 @@ const { StatusCodes } = require('http-status-codes')
 const getAllRoomChat = catchAsync(async (req, res, next) => {
     const { id: userId } = req.user
     const { roomId } = req.params
-    if (req.query.status) {
-        delete req.query.status
-    }
-    const allChat = new APIFeatures(
-        RoomChat.find({
-            $or: [
-                { status: 'public', room: roomId },
-                { status: 'private', user: userId, room: roomId },
-                { status: 'private', to: userId, room: roomId },
-            ],
-        }),
-        req.query
-    ).filter()
 
-    const chat = new APIFeatures(
+    let roomChat
+
+    if (req.query.status === 'private') {
+        // filter by req.query.status = private
+        roomChat = RoomChat.find({
+            room: roomId,
+            $or: [{ user: userId }, { to: userId }],
+        })
+    }
+
+    if (req.query.status === 'public') {
+        // filter by req.query.status = public
+        roomChat = RoomChat.find({
+            room: roomId,
+        })
+    }
+
+    roomChat =
+        roomChat ??
         RoomChat.find({
+            room: roomId,
             $or: [
-                { status: 'public', room: roomId },
-                { status: 'private', user: userId, room: roomId },
-                { status: 'private', to: userId, room: roomId },
+                { status: 'public' },
+                { status: 'private', user: userId },
+                { status: 'private', to: userId },
             ],
-        }),
-        req.query
-    )
+        })
+
+    const allChat = new APIFeatures(roomChat, req.query).filter()
+
+    const chat = new APIFeatures(roomChat, req.query)
         .filter()
         .sort()
         .limitFields()
@@ -69,18 +77,19 @@ const searchRoomChat = catchAsync(async (req, res, next) => {
     const { id: userId } = req.user
     const { s } = req.query
     const { roomId } = req.params
-    console.log(roomId, s)
     if (!s) {
         return next(
             new AppError('Please, check search param', StatusCodes.BAD_REQUEST)
         )
     }
+
     let data = await RoomChat.find(
         {
+            room: roomId,
             $or: [
-                { status: 'public', room: roomId },
-                { status: 'private', user: userId, room: roomId },
-                { status: 'private', to: userId, room: roomId },
+                { status: 'public' },
+                { status: 'private', user: userId },
+                { status: 'private', to: userId },
             ],
             $text: { $search: s },
         },
