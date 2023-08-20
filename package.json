@@ -33,7 +33,7 @@
         "html-to-text": "^8.0.0",
         "http-status-codes": "^2.2.0",
         "jsonwebtoken": "^9.0.0",
-        "mongoose": "^5.11.4",
+        "mongoose": "^5.13.20",
         "multer": "^1.4.2",
         "multer-storage-cloudinary": "^4.0.0",
         "sharp": "^0.30.5",
